@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'data/favorites_service.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
 import 'theme/theme_controller.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FavoritesService.instance.init();
   runApp(const WallifyApp());
 }
 
