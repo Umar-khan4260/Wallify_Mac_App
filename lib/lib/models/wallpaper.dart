@@ -8,6 +8,9 @@ class Wallpaper {
   final String resolution;
   final String _rawImage;
 
+  /// The raw filename or URL stored by FavoritesService.
+  String get rawImage => _rawImage;
+
   const Wallpaper({
     required this.id,
     required this.title,

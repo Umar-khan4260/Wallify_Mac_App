@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/favorites_service.dart';
 import '../models/wallpaper.dart';
 import '../theme/app_dimens.dart';
 
@@ -18,7 +19,7 @@ class WallpaperCard extends StatefulWidget {
 
 class _WallpaperCardState extends State<WallpaperCard> {
   bool _hovering = false;
-  bool _favorited = false;
+  final _favService = FavoritesService.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -118,20 +119,27 @@ class _WallpaperCardState extends State<WallpaperCard> {
                 Positioned(
                   right: AppSpacing.stackSm,
                   top: AppSpacing.stackSm,
-                  child: GestureDetector(
-                    onTap: () => setState(() => _favorited = !_favorited),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.45),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        _favorited ? Icons.favorite : Icons.favorite_border,
-                        size: 16,
-                        color: _favorited ? Colors.redAccent : Colors.white,
-                      ),
-                    ),
+                  child: ValueListenableBuilder<List<Wallpaper>>(
+                    valueListenable: _favService.listenable,
+                    builder: (context, favorites, _) {
+                      final isFav = _favService.isFavorite(widget.wallpaper.id);
+                      return GestureDetector(
+                        onTap: () =>
+                            _favService.toggleFavorite(widget.wallpaper),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            size: 16,
+                            color: isFav ? Colors.redAccent : Colors.white,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 Positioned(
