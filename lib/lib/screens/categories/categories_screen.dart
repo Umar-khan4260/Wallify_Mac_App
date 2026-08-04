@@ -80,8 +80,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   setState(() {
                     _selectedFilter = i;
                     if (i > 0) {
-                      _wallpapersFuture = _wallpaperRepository
-                          .getWallpapersByCategory(categories[i - 1].id);
+                      _wallpapersFuture = _wallpaperRepository.getWallpapers(
+                        categoryId: categories[i - 1].id,
+                      );
                     } else {
                       _wallpapersFuture = null;
                     }
@@ -100,7 +101,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             setState(() {
                               _selectedFilter = index;
                               _wallpapersFuture = _wallpaperRepository
-                                  .getWallpapersByCategory(category.id);
+                                  .getWallpapers(categoryId: category.id);
                             });
                           },
                         ),

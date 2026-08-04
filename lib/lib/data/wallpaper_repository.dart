@@ -4,9 +4,16 @@ import '../models/wallpaper.dart';
 import 'api_config.dart';
 
 class WallpaperRepository {
-  Future<List<Wallpaper>> getWallpapersByCategory(int categoryId) async {
+  Future<List<Wallpaper>> getWallpapers({
+    int page = 1,
+    int count = 20,
+    String filter = 'wallpaper',
+    String order = 'recent',
+    int? categoryId,
+  }) async {
+    final categoryParam = categoryId != null ? '&category=$categoryId' : '';
     final uri = Uri.parse(
-      '${ApiConfig.baseUrl}api.php?get_new_wallpapers&page=1&count=20&filter=wallpaper&order=recent&category=$categoryId',
+      '${ApiConfig.baseUrl}api.php?get_new_wallpapers&page=$page&count=$count&filter=$filter&order=$order$categoryParam',
     );
 
     final response = await http.get(uri);
