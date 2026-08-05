@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../data/download_service.dart';
 import '../data/favorites_service.dart';
 import '../models/wallpaper.dart';
 import '../theme/app_dimens.dart';
 
-/// Shows one wallpaper thumbnail with its title/resolution and a toggleable
-/// favorite heart. Distinct from `CategoryCard` (categories/widgets), which
-/// shows a category cover with an item count instead.
+/// Shows one wallpaper thumbnail with its title/resolution and toggleable
+/// favorite heart + download button. Distinct from `CategoryCard`
+/// (categories/widgets), which shows a category cover with an item count.
 class WallpaperCard extends StatefulWidget {
   final Wallpaper wallpaper;
   final VoidCallback? onTap;
@@ -20,6 +21,7 @@ class WallpaperCard extends StatefulWidget {
 class _WallpaperCardState extends State<WallpaperCard> {
   bool _hovering = false;
   final _favService = FavoritesService.instance;
+  final _dlService = DownloadService.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +56,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
+                // ── Thumbnail image ──────────────────────────────────────
                 AnimatedScale(
                   duration: const Duration(milliseconds: 500),
                   scale: _hovering ? 1.05 : 1.0,
@@ -78,6 +81,8 @@ class _WallpaperCardState extends State<WallpaperCard> {
                     ),
                   ),
                 ),
+
+                // ── Bottom gradient overlay ───────────────────────────────
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -92,7 +97,8 @@ class _WallpaperCardState extends State<WallpaperCard> {
                     ),
                   ),
                 ),
-                // Resolution / Live badge — top-left
+
+                // ── Resolution / LIVE badge — top-left ────────────────────
                 Positioned(
                   left: AppSpacing.stackSm,
                   top: AppSpacing.stackSm,
@@ -150,33 +156,95 @@ class _WallpaperCardState extends State<WallpaperCard> {
                     ],
                   ),
                 ),
-                // Favorite toggle, top-right
+
+                // ── Download + Favorite buttons — top-right ───────────────
                 Positioned(
                   right: AppSpacing.stackSm,
                   top: AppSpacing.stackSm,
-                  child: ValueListenableBuilder<List<Wallpaper>>(
-                    valueListenable: _favService.listenable,
-                    builder: (context, favorites, _) {
-                      final isFav = _favService.isFavorite(widget.wallpaper.id);
-                      return GestureDetector(
-                        onTap: () =>
-                            _favService.toggleFavorite(widget.wallpaper),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.45),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isFav ? Icons.favorite : Icons.favorite_border,
-                            size: 16,
-                            color: isFav ? Colors.redAccent : Colors.white,
-                          ),
-                        ),
-                      );
-                    },
+                  child: Row(
+                    children: [
+                      // Download button
+                      ValueListenableBuilder<Map<String, double>>(
+                        valueListenable: _dlService.progressListenable,
+                        builder: (context, progressMap, _) {
+                          return ValueListenableBuilder<List<Wallpaper>>(
+                            valueListenable: _dlService.listenable,
+                            builder: (context, _, __) {
+                              final isDone = _dlService.isDownloaded(
+                                widget.wallpaper.id,
+                              );
+                              final isInProgress = _dlService.isDownloading(
+                                widget.wallpaper.id,
+                              );
+                              return GestureDetector(
+                                onTap: () {
+                                  if (!isDone && !isInProgress) {
+                                    _dlService.downloadWallpaper(
+                                      widget.wallpaper,
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.45),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: isInProgress
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Icon(
+                                          isDone
+                                              ? Icons.check
+                                              : Icons.download_rounded,
+                                          size: 16,
+                                          color: isDone
+                                              ? Colors.greenAccent
+                                              : Colors.white,
+                                        ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(width: AppSpacing.stackSm),
+                      // Favorite button
+                      ValueListenableBuilder<List<Wallpaper>>(
+                        valueListenable: _favService.listenable,
+                        builder: (context, _, __) {
+                          final isFav = _favService.isFavorite(
+                            widget.wallpaper.id,
+                          );
+                          return GestureDetector(
+                            onTap: () =>
+                                _favService.toggleFavorite(widget.wallpaper),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.45),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                size: 16,
+                                color: isFav ? Colors.redAccent : Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
+
+                // ── Title / category + hover CTA — bottom ─────────────────
                 Positioned(
                   left: AppSpacing.stackMd,
                   right: AppSpacing.stackMd,
