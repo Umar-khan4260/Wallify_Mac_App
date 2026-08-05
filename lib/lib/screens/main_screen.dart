@@ -22,16 +22,26 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // Home by default
+  int? _selectedCategoryIdForTab;
 
-  static const _pages = [
-    HomeScreen(),
-    ExploreScreen(),
-    CategoriesScreen(),
-    TrendingScreen(),
-    FavoritesScreen(),
-    DownloadsScreen(),
-    SettingsScreen(),
-  ];
+  List<Widget> _buildPages() {
+    return [
+      HomeScreen(
+        onNavigateToCategory: (categoryId) {
+          setState(() {
+            _selectedCategoryIdForTab = categoryId;
+            _selectedIndex = 2; // Categories tab
+          });
+        },
+      ),
+      const ExploreScreen(),
+      CategoriesScreen(initialCategoryId: _selectedCategoryIdForTab),
+      const TrendingScreen(),
+      const FavoritesScreen(),
+      const DownloadsScreen(),
+      const SettingsScreen(),
+    ];
+  }
 
   static const _pageTitles = [
     'Home',
@@ -52,7 +62,14 @@ class _MainScreenState extends State<MainScreen> {
         children: [
           SideNavBar(
             activeIndex: _selectedIndex,
-            onIndexChanged: (index) => setState(() => _selectedIndex = index),
+            onIndexChanged: (index) {
+              setState(() {
+                _selectedIndex = index;
+                if (index != 2) {
+                  _selectedCategoryIdForTab = null;
+                }
+              });
+            },
           ),
           Expanded(
             child: Column(
@@ -61,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
                 Expanded(
                   child: IndexedStack(
                     index: _selectedIndex,
-                    children: _pages,
+                    children: _buildPages(),
                   ),
                 ),
               ],
