@@ -10,7 +10,9 @@ import 'widgets/category_grid.dart';
 import 'widgets/filters_row.dart';
 
 class CategoriesScreen extends StatefulWidget {
-  const CategoriesScreen({super.key});
+  final int? initialCategoryId;
+
+  const CategoriesScreen({super.key, this.initialCategoryId});
 
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
@@ -28,6 +30,34 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   void initState() {
     super.initState();
     _categoriesFuture = _categoryRepository.getCategories();
+    _handleInitialCategory();
+  }
+
+  @override
+  void didUpdateWidget(CategoriesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialCategoryId != oldWidget.initialCategoryId) {
+      _handleInitialCategory();
+    }
+  }
+
+  void _handleInitialCategory() {
+    if (widget.initialCategoryId != null) {
+      _categoriesFuture.then((categories) {
+        if (!mounted) return;
+        final index = categories.indexWhere(
+          (c) => c.id == widget.initialCategoryId,
+        );
+        if (index != -1) {
+          setState(() {
+            _selectedFilter = index + 1; // +1 because 0 is 'All'
+            _wallpapersFuture = _wallpaperRepository.getWallpapers(
+              categoryId: widget.initialCategoryId!,
+            );
+          });
+        }
+      });
+    }
   }
 
   Future<void> _refresh() async {

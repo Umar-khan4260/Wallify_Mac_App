@@ -9,9 +9,9 @@ class WallpaperRepository {
     int count = 20,
     String filter = 'all',
     String order = 'recent',
-    int? categoryId,
+    int categoryId = 0,
   }) async {
-    final categoryParam = categoryId != null ? '&category=$categoryId' : '';
+    final categoryParam = '&category=$categoryId';
     final uri = Uri.parse(
       '${ApiConfig.baseUrl}api.php?get_new_wallpapers&page=$page&count=$count&filter=$filter&order=$order$categoryParam',
     );
