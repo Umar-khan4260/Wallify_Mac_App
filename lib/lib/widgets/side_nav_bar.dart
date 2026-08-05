@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
+import '../theme/theme_controller.dart';
 
 class NavItemData {
   final IconData icon;
@@ -81,6 +82,66 @@ class SideNavBar extends StatelessWidget {
               onTap: () => onIndexChanged(i),
             ),
           const Spacer(),
+          // Theme Toggle
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: themeNotifier,
+            builder: (context, mode, _) {
+              final isDark = mode == ThemeMode.dark ||
+                  (mode == ThemeMode.system &&
+                      MediaQuery.platformBrightnessOf(context) ==
+                          Brightness.dark);
+              return Row(
+                children: [
+                  Text(
+                    'Dark Mode',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      ThemeController.instance.toggleTheme();
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 44,
+                      height: 24,
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        color: isDark
+                            ? AppColors.primary
+                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      ),
+                      child: AnimatedAlign(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        alignment: isDark
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          width: 20,
+                          height: 20,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                          child: Icon(
+                            isDark ? Icons.dark_mode : Icons.light_mode,
+                            size: 12,
+                            color: isDark ? AppColors.primary : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
           const Divider(height: AppSpacing.stackLg),
           _NavItem(
             data: settingsNavItem,
@@ -132,11 +193,11 @@ class _NavItemState extends State<_NavItem> {
               color: active
                   ? AppColors.primary
                   : (_hovering
-                        ? (Theme.of(context).colorScheme.brightness ==
-                                  Brightness.dark
-                              ? Colors.white.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.05))
-                        : Colors.transparent),
+                      ? (Theme.of(context).colorScheme.brightness ==
+                              Brightness.dark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.black.withOpacity(0.05))
+                      : Colors.transparent),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Row(
