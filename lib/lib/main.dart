@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'data/download_service.dart';
 import 'data/favorites_service.dart';
 import 'screens/main_screen.dart';
 import 'theme/app_colors.dart';
@@ -9,6 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeController.instance.init();
   await FavoritesService.instance.init();
+  await DownloadService.instance.init();
   runApp(const WallifyApp());
 }
 
