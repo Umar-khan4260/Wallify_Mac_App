@@ -19,9 +19,16 @@ class ApiConfig {
       ? '$_proxyPrefix$_rawCategoryImageBaseUrl'
       : _rawCategoryImageBaseUrl;
 
+  /// Full-resolution wallpaper images.
   static const String _rawWallpaperImageBaseUrl =
       'https://nature-new.sunztech.com/upload/';
   static String get wallpaperImageBaseUrl => kIsWeb
       ? '$_proxyPrefix$_rawWallpaperImageBaseUrl'
       : _rawWallpaperImageBaseUrl;
+
+  /// Thumbnail/preview images for video (live) wallpapers.
+  static const String _rawThumbImageBaseUrl =
+      'https://nature-new.sunztech.com/upload/thumbs/';
+  static String get thumbImageBaseUrl =>
+      kIsWeb ? '$_proxyPrefix$_rawThumbImageBaseUrl' : _rawThumbImageBaseUrl;
 }

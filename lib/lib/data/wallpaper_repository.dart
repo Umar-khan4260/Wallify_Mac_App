@@ -7,7 +7,7 @@ class WallpaperRepository {
   Future<List<Wallpaper>> getWallpapers({
     int page = 1,
     int count = 20,
-    String filter = 'wallpaper',
+    String filter = 'all',
     String order = 'recent',
     int? categoryId,
   }) async {
