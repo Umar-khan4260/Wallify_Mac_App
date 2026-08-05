@@ -1,11 +1,14 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/wallpaper.dart';
+
+// Path-provider & dart:io are only available on native (non-web) platforms.
+// We use a conditional import stub so the file compiles on web too.
+import 'download_service_io.dart'
+    if (dart.library.html) 'download_service_web.dart'
+    as platform;
 
 /// Singleton that handles downloading wallpapers and persisting the list of downloaded items.
 class DownloadService {
@@ -47,42 +50,23 @@ class DownloadService {
     if (isDownloaded(wallpaper.id) || isDownloading(wallpaper.id)) return;
 
     try {
-      // Mark as downloading (0% progress)
       _updateProgress(wallpaper.id, 0.0);
 
-      // On Web, we can't easily save to a local directory using path_provider.
-      // For now, we'll just simulate a download or use a workaround if needed.
       if (kIsWeb) {
-        // Simulate download for web
-        await Future.delayed(const Duration(seconds: 1));
-        _updateProgress(wallpaper.id, 1.0);
-        await _add(wallpaper);
-        _reload();
-        _removeProgress(wallpaper.id);
-        return;
-      }
-
-      final dir = await getApplicationDocumentsDirectory();
-      final wallifyDir = Directory('${dir.path}/Wallify');
-      if (!await wallifyDir.exists()) {
-        await wallifyDir.create(recursive: true);
-      }
-
-      final fileName = wallpaper.rawImage.split('/').last;
-      final savePath = '${wallifyDir.path}/$fileName';
-
-      // Download the file
-      final response = await http.get(Uri.parse(wallpaper.mediaUrl));
-
-      if (response.statusCode == 200) {
-        final file = File(savePath);
-        await file.writeAsBytes(response.bodyBytes);
-
-        // Save to SharedPreferences
+        // On web, we can't save to a local file, so just record the wallpaper metadata.
+        await Future.delayed(const Duration(milliseconds: 800));
         await _add(wallpaper);
         _reload();
       } else {
-        debugPrint('Failed to download: HTTP ${response.statusCode}');
+        // Download on native (Android, iOS, Windows, macOS, Linux).
+        final response = await http.get(Uri.parse(wallpaper.mediaUrl));
+        if (response.statusCode == 200) {
+          await platform.saveFile(wallpaper.rawImage, response.bodyBytes);
+          await _add(wallpaper);
+          _reload();
+        } else {
+          debugPrint('Failed to download: HTTP ${response.statusCode}');
+        }
       }
     } catch (e) {
       debugPrint('Error downloading wallpaper: $e');
