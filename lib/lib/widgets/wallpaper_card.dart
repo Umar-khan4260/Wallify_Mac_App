@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/download_service.dart';
 import '../data/favorites_service.dart';
+import '../data/wallpaper_service.dart';
 import '../models/wallpaper.dart';
 import '../theme/app_dimens.dart';
 
@@ -22,6 +23,51 @@ class _WallpaperCardState extends State<WallpaperCard> {
   bool _hovering = false;
   final _favService = FavoritesService.instance;
   final _dlService = DownloadService.instance;
+
+  bool _isSettingWallpaper = false;
+  double _setProgress = 0.0;
+
+  Future<void> _handleSetWallpaper() async {
+    if (_isSettingWallpaper) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+
+    setState(() {
+      _isSettingWallpaper = true;
+      _setProgress = 0.0;
+    });
+
+    try {
+      final result = await WallpaperService.instance.setWallpaper(
+        widget.wallpaper,
+        onProgress: (progress) {
+          if (!mounted) return;
+          setState(() => _setProgress = progress);
+        },
+        onApplying: () {
+          if (!mounted) return;
+          setState(() => _setProgress = 1.0);
+        },
+      );
+
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(result.success ? 'Wallpaper applied!' : result.message),
+            backgroundColor: result.success ? Colors.green.shade700 : errorColor,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() => _isSettingWallpaper = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,39 +319,43 @@ class _WallpaperCardState extends State<WallpaperCard> {
                       ),
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        height: _hovering ? 40 : 0,
+                        height: (_hovering || _isSettingWallpaper) ? 40 : 0,
                         margin: EdgeInsets.only(
-                          top: _hovering ? AppSpacing.stackSm : 0,
+                          top: (_hovering || _isSettingWallpaper)
+                              ? AppSpacing.stackSm
+                              : 0,
                         ),
                         child: AnimatedOpacity(
                           duration: const Duration(milliseconds: 200),
-                          opacity: _hovering ? 1.0 : 0.0,
+                          opacity: (_hovering || _isSettingWallpaper)
+                              ? 1.0
+                              : 0.0,
                           child: SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // TODO: Implement set as wallpaper functionality
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 0,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.full,
+                            child: _isSettingWallpaper
+                                ? _WallpaperProgress(progress: _setProgress)
+                                : ElevatedButton(
+                                    onPressed: _handleSetWallpaper,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 0,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.full,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Set as Wallpaper',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              child: const Text(
-                                'Set as Wallpaper',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                       ),
@@ -316,6 +366,63 @@ class _WallpaperCardState extends State<WallpaperCard> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown inside the card while a wallpaper is being downloaded/applied.
+class _WallpaperProgress extends StatelessWidget {
+  const _WallpaperProgress({required this.progress});
+
+  /// Download progress in 0.0..1.0. Once it reaches 1.0 the download is done
+  /// and the native "apply" step runs, so an indeterminate spinner is shown.
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final downloading = progress < 1.0;
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (downloading) ...[
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ] else
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+        ],
       ),
     );
   }

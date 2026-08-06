@@ -1,30 +1,70 @@
-// This is a basic Flutter widget test.
+// Tests for the set-as-wallpaper service.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// These are kept as pure Dart unit tests (no full-app widget pump) because the
+// app shell fetches live data and renders network images, which is not
+// deterministic in the widget-test environment.
 
-import 'package:flutter/material.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:wallify/main.dart';
+import 'package:wallify/lib/data/wallpaper_service.dart';
+import 'package:wallify/lib/models/wallpaper.dart';
+
+const _wallpaper = Wallpaper(
+  id: '42',
+  title: 'Aurora',
+  category: 'Nature',
+  resolution: '1920x1080',
+  imageUrl: 'aurora.jpg',
+);
+
+const _videoWallpaper = Wallpaper(
+  id: '7',
+  title: 'Waves',
+  category: 'Live',
+  resolution: '3840x2160',
+  imageUrl: 'waves.mp4',
+  isVideo: true,
+);
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const WallifyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('WallpaperSetResult', () {
+    test('success result carries a message', () {
+      const result = WallpaperSetResult.success();
+      expect(result.success, isTrue);
+      expect(result.downloaded, isFalse);
+      expect(result.message, isNotEmpty);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    test('failure result carries its message', () {
+      const result = WallpaperSetResult.failure('boom');
+      expect(result.success, isFalse);
+      expect(result.message, 'boom');
+    });
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  group('WallpaperService.setWallpaper', () {
+    test('never throws; returns a failure on unsupported platforms', () async {
+      if (Platform.isMacOS) {
+        markTestSkipped(
+          'Requires the native macOS handler (covered by manual testing).',
+        );
+        return;
+      }
+      final result = await WallpaperService.instance.setWallpaper(_wallpaper);
+      expect(result.success, isFalse);
+      expect(result.message, contains('macOS'));
+    });
+
+    test('rejects live wallpapers before touching the platform channel',
+        () async {
+      final result = await WallpaperService.instance
+          .setWallpaper(_videoWallpaper);
+      expect(result.success, isFalse);
+      expect(result.message, contains('Live wallpapers'));
+    });
   });
 }
