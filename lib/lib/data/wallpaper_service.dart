@@ -24,7 +24,7 @@ class WallpaperSetResult {
   }) : this._(success: true, message: message, downloaded: downloaded);
 
   const WallpaperSetResult.failure(String message)
-      : this._(success: false, message: message);
+    : this._(success: false, message: message);
 
   final bool success;
 
@@ -62,8 +62,7 @@ class WallpaperService {
   Future<String> ensureLocalFile(
     Wallpaper wallpaper, {
     void Function(double progress)? onProgress,
-  }) =>
-      _fileStore.ensureLocalFile(wallpaper, onProgress: onProgress);
+  }) => _fileStore.ensureLocalFile(wallpaper, onProgress: onProgress);
 
   /// Full "set wallpaper" flow. Never throws — returns a result instead so
   /// the UI can render loading, success and error states cleanly.
@@ -96,10 +95,9 @@ class WallpaperService {
 
       onApplying?.call();
 
-      final applied = await _channel.invokeMethod<bool>(
-        'setWallpaper',
-        {'path': localPath},
-      );
+      final applied = await _channel.invokeMethod<bool>('setWallpaper', {
+        'filePath': localPath,
+      });
 
       if (applied == true) {
         return WallpaperSetResult.success(downloaded: !reused);
@@ -108,9 +106,7 @@ class WallpaperService {
         'The system could not apply the wallpaper.',
       );
     } on PlatformException catch (e) {
-      return WallpaperSetResult.failure(
-        e.message ?? 'Native error: ${e.code}',
-      );
+      return WallpaperSetResult.failure(e.message ?? 'Native error: ${e.code}');
     } on DioException catch (e) {
       return WallpaperSetResult.failure(_describeDioError(e));
     } catch (e) {
