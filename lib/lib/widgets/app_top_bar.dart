@@ -37,9 +37,11 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.stackLg),
-          SizedBox(
-            width: 288,
-            child: SearchField(hintText: 'Search $title...'),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 288),
+              child: SearchField(hintText: 'Search $title...'),
+            ),
           ),
           const Spacer(),
           ValueListenableBuilder<ThemeMode>(
@@ -48,9 +50,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
               final isDark = mode == ThemeMode.dark;
               return IconButton(
                 icon: Icon(
-                  isDark
-                      ? Icons.light_mode_outlined
-                      : Icons.dark_mode_outlined,
+                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
@@ -60,20 +60,6 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                 },
               );
             },
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            onPressed: () {},
-          ),
-          const SizedBox(width: AppSpacing.stackSm),
-          const CircleAvatar(
-            radius: 16,
-            backgroundImage: NetworkImage(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuCHDRprTLQGVw9H8f0VyQQ6ZJNNGD1gg5bf6IwrrMS4KJvFLYZGJjNQ4Y8cqThVJFUrujtQCT6LJqNpZmoizDKnx6Huyu-ogvc8MrKueZQ15mbM1ESDfPIk5upZx6DJd3sNlsUEwXYaXTqZk9S2KVehEPtFMGEa21AHorjQOM0dzObmUd5NWexF9wK3jcrAfVkOzWwbjPZwhhcRaRtkeYP9cWr1yrt0Mg_KeRyeNqrGyJg8Dw47HFF15w',
-            ),
           ),
         ],
       ),

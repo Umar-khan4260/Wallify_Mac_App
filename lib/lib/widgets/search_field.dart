@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/search_controller.dart';
 import '../theme/app_dimens.dart';
 
 class SearchField extends StatelessWidget {
@@ -11,7 +12,10 @@ class SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      onChanged: onChanged,
+      onChanged: (val) {
+        searchQueryNotifier.value = val;
+        onChanged?.call(val);
+      },
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(
