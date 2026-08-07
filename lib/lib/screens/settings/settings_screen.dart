@@ -20,7 +20,11 @@ class SettingsScreen extends StatelessWidget {
               subtitle: const Text('Switch between light and dark theme'),
               value: mode == ThemeMode.dark,
               onChanged: (value) {
-                themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
+                // If the switch value doesn't match the current mode, toggle it.
+                if ((value && mode != ThemeMode.dark) ||
+                    (!value && mode == ThemeMode.dark)) {
+                  ThemeController.instance.toggleTheme();
+                }
               },
             );
           },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/api_constants.dart';
+import '../../data/search_controller.dart';
 import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../theme/app_dimens.dart';
@@ -88,17 +89,38 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                 return RefreshIndicator(
                   onRefresh: _refresh,
-                  child: GridView.builder(
-                    itemCount: explore.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 260,
-                          mainAxisExtent: 200,
-                          crossAxisSpacing: AppSpacing.stackMd,
-                          mainAxisSpacing: AppSpacing.stackMd,
-                        ),
-                    itemBuilder: (context, index) {
-                      return WallpaperCard(wallpaper: explore[index]);
+                  child: ValueListenableBuilder<String>(
+                    valueListenable: searchQueryNotifier,
+                    builder: (context, query, _) {
+                      final filtered = query.isEmpty
+                          ? explore
+                          : explore
+                                .where(
+                                  (w) => w.title.toLowerCase().contains(
+                                    query.toLowerCase(),
+                                  ),
+                                )
+                                .toList();
+
+                      if (filtered.isEmpty) {
+                        return const Center(
+                          child: Text('No wallpapers found.'),
+                        );
+                      }
+
+                      return GridView.builder(
+                        itemCount: filtered.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 260,
+                              mainAxisExtent: 200,
+                              crossAxisSpacing: AppSpacing.stackMd,
+                              mainAxisSpacing: AppSpacing.stackMd,
+                            ),
+                        itemBuilder: (context, index) {
+                          return WallpaperCard(wallpaper: filtered[index]);
+                        },
+                      );
                     },
                   ),
                 );

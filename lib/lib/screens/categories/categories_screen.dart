@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/category_repository.dart';
+import '../../data/search_controller.dart';
 import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../models/wallpaper_category.dart';
@@ -121,11 +122,30 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               ),
               const SizedBox(height: AppSpacing.stackLg),
               Expanded(
-                child: _selectedFilter == 0
-                    ? RefreshIndicator(
+                child: ValueListenableBuilder<String>(
+                  valueListenable: searchQueryNotifier,
+                  builder: (context, query, _) {
+                    if (_selectedFilter == 0) {
+                      final filteredCategories = query.isEmpty
+                          ? categories
+                          : categories
+                                .where(
+                                  (c) => c.name.toLowerCase().contains(
+                                    query.toLowerCase(),
+                                  ),
+                                )
+                                .toList();
+
+                      if (filteredCategories.isEmpty) {
+                        return const Center(
+                          child: Text('No categories found.'),
+                        );
+                      }
+
+                      return RefreshIndicator(
                         onRefresh: _refresh,
                         child: CategoryGrid(
-                          categories: categories,
+                          categories: filteredCategories,
                           onCategoryTap: (category) {
                             final index = categories.indexOf(category) + 1;
                             setState(() {
@@ -135,8 +155,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             });
                           },
                         ),
-                      )
-                    : FutureBuilder<List<Wallpaper>>(
+                      );
+                    } else {
+                      return FutureBuilder<List<Wallpaper>>(
                         future: _wallpapersFuture,
                         builder: (context, wallpaperSnapshot) {
                           if (wallpaperSnapshot.connectionState ==
@@ -153,7 +174,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             );
                           }
                           final wallpapers = wallpaperSnapshot.data ?? const [];
-                          if (wallpapers.isEmpty) {
+
+                          final filteredWallpapers = query.isEmpty
+                              ? wallpapers
+                              : wallpapers
+                                    .where(
+                                      (w) => w.title.toLowerCase().contains(
+                                        query.toLowerCase(),
+                                      ),
+                                    )
+                                    .toList();
+
+                          if (filteredWallpapers.isEmpty) {
                             return const Center(
                               child: Text(
                                 'No wallpapers found in this category.',
@@ -161,7 +193,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             );
                           }
                           return GridView.builder(
-                            itemCount: wallpapers.length,
+                            itemCount: filteredWallpapers.length,
                             gridDelegate:
                                 const SliverGridDelegateWithMaxCrossAxisExtent(
                                   maxCrossAxisExtent: 260,
@@ -171,12 +203,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 ),
                             itemBuilder: (context, index) {
                               return WallpaperCard(
-                                wallpaper: wallpapers[index],
+                                wallpaper: filteredWallpapers[index],
                               );
                             },
                           );
                         },
-                      ),
+                      );
+                    }
+                  },
+                ),
               ),
             ],
           );

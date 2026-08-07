@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/category_repository.dart';
+import '../../data/search_controller.dart';
 import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../models/wallpaper_category.dart';
@@ -114,18 +115,41 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: AppSpacing.stackLg),
               Text('Trending Wallpapers', style: sectionTitleStyle),
               const SizedBox(height: AppSpacing.stackMd),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: gridWallpapers.length,
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 260,
-                  mainAxisExtent: 200,
-                  crossAxisSpacing: AppSpacing.stackMd,
-                  mainAxisSpacing: AppSpacing.stackMd,
-                ),
-                itemBuilder: (context, index) {
-                  return WallpaperCard(wallpaper: gridWallpapers[index]);
+              ValueListenableBuilder<String>(
+                valueListenable: searchQueryNotifier,
+                builder: (context, query, _) {
+                  final filtered = query.isEmpty
+                      ? gridWallpapers
+                      : gridWallpapers
+                            .where(
+                              (w) => w.title.toLowerCase().contains(
+                                query.toLowerCase(),
+                              ),
+                            )
+                            .toList();
+
+                  if (filtered.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Center(child: Text('No wallpapers found.')),
+                    );
+                  }
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 260,
+                          mainAxisExtent: 200,
+                          crossAxisSpacing: AppSpacing.stackMd,
+                          mainAxisSpacing: AppSpacing.stackMd,
+                        ),
+                    itemBuilder: (context, index) {
+                      return WallpaperCard(wallpaper: filtered[index]);
+                    },
+                  );
                 },
               ),
             ],
