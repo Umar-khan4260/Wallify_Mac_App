@@ -6,7 +6,16 @@ class WallpaperFileStore {
 
   Future<String?> localFileFor(Wallpaper wallpaper) async => null;
 
+  Future<String?> localThumbFor(Wallpaper wallpaper) async => null;
+
   Future<String> ensureLocalFile(
+    Wallpaper wallpaper, {
+    void Function(double progress)? onProgress,
+  }) {
+    throw UnsupportedError('Setting wallpapers is not supported on web.');
+  }
+
+  Future<String> ensureLocalThumbFile(
     Wallpaper wallpaper, {
     void Function(double progress)? onProgress,
   }) {
