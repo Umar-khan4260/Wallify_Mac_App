@@ -8,6 +8,10 @@ class MainFlutterWindow: NSWindow {
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
+    // Keep the window object alive so the Dock-reopen handler can re-show it
+    // after the user closes it (the app keeps running in the background).
+    isReleasedWhenClosed = false
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     let wallpaperChannel = FlutterMethodChannel(name: "com.myapp/wallpaper",
