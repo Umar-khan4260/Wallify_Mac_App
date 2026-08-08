@@ -61,9 +61,14 @@ class DownloadService {
         // Download on native (Android, iOS, Windows, macOS, Linux).
         final response = await http.get(Uri.parse(wallpaper.mediaUrl));
         if (response.statusCode == 200) {
-          await platform.saveFile(wallpaper.rawImage, response.bodyBytes);
-          await _add(wallpaper);
-          _reload();
+          final saved = await platform.saveFile(
+            wallpaper.rawImage,
+            response.bodyBytes,
+          );
+          if (saved) {
+            await _add(wallpaper);
+            _reload();
+          }
         } else {
           debugPrint('Failed to download: HTTP ${response.statusCode}');
         }
