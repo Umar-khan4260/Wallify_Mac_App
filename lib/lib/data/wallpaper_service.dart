@@ -74,24 +74,27 @@ class WallpaperService {
     void Function(double progress)? onProgress,
     VoidCallback? onApplying,
   }) async {
-    if (wallpaper.isVideo) {
-      return const WallpaperSetResult.failure(
-        'Live wallpapers are not supported yet.',
-      );
-    }
-
     if (!isSupported) {
       return const WallpaperSetResult.failure(
         'Setting wallpapers is only supported on macOS.',
       );
     }
 
+    final isVideo = wallpaper.isVideo;
+
     try {
-      final reused = await localFileFor(wallpaper) != null;
-      final localPath = await ensureLocalFile(
-        wallpaper,
-        onProgress: onProgress,
-      );
+      final reused = isVideo
+          ? await _fileStore.localThumbFor(wallpaper) != null
+          : await localFileFor(wallpaper) != null;
+
+      // macOS has no public API for video wallpapers, so live wallpapers are
+      // applied as their still thumbnail frame.
+      final localPath = isVideo
+          ? await _fileStore.ensureLocalThumbFile(
+              wallpaper,
+              onProgress: onProgress,
+            )
+          : await ensureLocalFile(wallpaper, onProgress: onProgress);
 
       onApplying?.call();
 
@@ -100,7 +103,12 @@ class WallpaperService {
       });
 
       if (applied == true) {
-        return WallpaperSetResult.success(downloaded: !reused);
+        return WallpaperSetResult.success(
+          message: isVideo
+              ? 'Live wallpaper applied as a still image.'
+              : 'Wallpaper applied',
+          downloaded: !reused,
+        );
       }
       return const WallpaperSetResult.failure(
         'The system could not apply the wallpaper.',

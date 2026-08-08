@@ -59,12 +59,17 @@ void main() {
       expect(result.message, contains('macOS'));
     });
 
-    test('rejects live wallpapers before touching the platform channel',
-        () async {
+    test('live wallpapers also require a supported platform', () async {
+      if (Platform.isMacOS) {
+        markTestSkipped(
+          'Requires the native macOS handler (covered by manual testing).',
+        );
+        return;
+      }
       final result = await WallpaperService.instance
           .setWallpaper(_videoWallpaper);
       expect(result.success, isFalse);
-      expect(result.message, contains('Live wallpapers'));
+      expect(result.message, contains('macOS'));
     });
   });
 }

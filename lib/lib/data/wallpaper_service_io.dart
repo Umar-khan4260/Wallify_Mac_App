@@ -34,11 +34,11 @@ class WallpaperFileStore {
     return dir.path;
   }
 
-  /// File extension taken from the media URL (e.g. `.jpg`), falling back to
-  /// `.jpg` when the URL has none.
-  String _extensionFor(Wallpaper wallpaper) {
-    final uri = Uri.tryParse(wallpaper.mediaUrl);
-    final path = uri?.path ?? wallpaper.mediaUrl;
+  /// File extension taken from a URL (e.g. `.jpg`), falling back to `.jpg`
+  /// when the URL has none.
+  String _extensionFor(String url) {
+    final uri = Uri.tryParse(url);
+    final path = uri?.path ?? url;
     final dot = path.lastIndexOf('.');
     if (dot != -1 && dot < path.length - 1) {
       return path.substring(dot).toLowerCase();
@@ -49,14 +49,21 @@ class WallpaperFileStore {
   String _sanitize(String value) =>
       value.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
 
-  Future<String> _pathFor(Wallpaper wallpaper) async {
+  Future<String> _pathFor(Wallpaper wallpaper, String url) async {
     final dirPath = await _cacheDirectory();
-    return '$dirPath/${_sanitize(wallpaper.id)}${_extensionFor(wallpaper)}';
+    return '$dirPath/${_sanitize(wallpaper.id)}${_extensionFor(url)}';
   }
 
   /// The on-disk path if the file is already cached, otherwise null.
   Future<String?> localFileFor(Wallpaper wallpaper) async {
-    final path = await _pathFor(wallpaper);
+    final path = await _pathFor(wallpaper, wallpaper.mediaUrl);
+    return File(path).existsSync() ? path : null;
+  }
+
+  /// The on-disk thumbnail path if already cached, otherwise null.
+  /// Used for live (video) wallpapers, which macOS can only apply as a still.
+  Future<String?> localThumbFor(Wallpaper wallpaper) async {
+    final path = await _pathFor(wallpaper, wallpaper.imageUrl);
     return File(path).existsSync() ? path : null;
   }
 
@@ -69,13 +76,32 @@ class WallpaperFileStore {
   }) async {
     final existing = await localFileFor(wallpaper);
     if (existing != null) return existing;
+    final finalPath = await _pathFor(wallpaper, wallpaper.mediaUrl);
+    return _downloadTo(wallpaper.mediaUrl, finalPath, onProgress: onProgress);
+  }
 
-    final finalPath = await _pathFor(wallpaper);
+  /// Downloads the still thumbnail of a live (video) wallpaper so it can be
+  /// applied as the desktop picture.
+  Future<String> ensureLocalThumbFile(
+    Wallpaper wallpaper, {
+    void Function(double progress)? onProgress,
+  }) async {
+    final existing = await localThumbFor(wallpaper);
+    if (existing != null) return existing;
+    final finalPath = await _pathFor(wallpaper, wallpaper.imageUrl);
+    return _downloadTo(wallpaper.imageUrl, finalPath, onProgress: onProgress);
+  }
+
+  Future<String> _downloadTo(
+    String url,
+    String finalPath, {
+    void Function(double progress)? onProgress,
+  }) async {
     final tempPath = '$finalPath.part';
 
     try {
       await _dio.download(
-        wallpaper.mediaUrl,
+        url,
         tempPath,
         onReceiveProgress: (received, total) {
           if (total <= 0) return;
@@ -88,7 +114,7 @@ class WallpaperFileStore {
         await temp.rename(finalPath);
       } else {
         throw DioException(
-          requestOptions: RequestOptions(path: wallpaper.mediaUrl),
+          requestOptions: RequestOptions(path: url),
           type: DioExceptionType.unknown,
           message: 'The downloaded file is missing.',
         );
