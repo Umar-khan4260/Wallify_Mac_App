@@ -20,21 +20,28 @@ final class LiveWallpaperManager {
   private var isScreenAsleep = false
   private var powerSourceRunLoopSource: CFRunLoopSource?
   private var observers: [NSObjectProtocol] = []
+  private var didStartMonitoring = false
 
   private init() {}
 
   // MARK: - Registration
 
-  /// Registers the method channel and starts observing power, sleep and
-  /// display-change notifications. Called once from the AppDelegate.
-  func register(with controller: FlutterViewController) {
+  /// Registers the method channel. Idempotent: safe to call from both
+  /// `MainFlutterWindow.awakeFromNib` and the AppDelegate.
+  func register(binaryMessenger: FlutterBinaryMessenger) {
     let channel = FlutterMethodChannel(
       name: Self.channelName,
-      binaryMessenger: controller.engine.binaryMessenger
+      binaryMessenger: binaryMessenger
     )
     channel.setMethodCallHandler { [weak self] call, result in
       self?.handle(call: call, result: result)
     }
+    startMonitoringIfNeeded()
+  }
+
+  private func startMonitoringIfNeeded() {
+    guard !didStartMonitoring else { return }
+    didStartMonitoring = true
     startMonitoring()
   }
 

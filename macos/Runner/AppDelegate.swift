@@ -22,8 +22,9 @@ class AppDelegate: FlutterAppDelegate {
       self?.handle(call: call, result: result)
     }
 
-    // Windowed video-behind-desktop live wallpapers.
-    LiveWallpaperManager.shared.register(with: controller)
+    // Windowed video-behind-desktop live wallpapers. Registration is idempotent
+    // (MainFlutterWindow also registers the channel during awakeFromNib).
+    LiveWallpaperManager.shared.register(binaryMessenger: controller.engine.binaryMessenger)
     LiveWallpaperManager.shared.restoreIfNeeded()
   }
 
