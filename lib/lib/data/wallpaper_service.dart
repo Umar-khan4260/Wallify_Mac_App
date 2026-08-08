@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/wallpaper.dart';
+import 'live_wallpaper_service.dart';
 import 'wallpaper_service_io.dart'
     if (dart.library.html) 'wallpaper_service_web.dart'
     as platform;
@@ -83,32 +85,40 @@ class WallpaperService {
     final isVideo = wallpaper.isVideo;
 
     try {
-      final reused = isVideo
-          ? await _fileStore.localThumbFor(wallpaper) != null
-          : await localFileFor(wallpaper) != null;
+      final reused = await localFileFor(wallpaper) != null;
 
-      // macOS has no public API for video wallpapers, so live wallpapers are
-      // applied as their still thumbnail frame.
-      final localPath = isVideo
-          ? await _fileStore.ensureLocalThumbFile(
-              wallpaper,
-              onProgress: onProgress,
-            )
-          : await ensureLocalFile(wallpaper, onProgress: onProgress);
+      // Downloads the media file (the .mp4 for live wallpapers, the image for
+      // still ones) into the cache, reporting progress along the way.
+      final localPath = await ensureLocalFile(
+        wallpaper,
+        onProgress: onProgress,
+      );
 
       onApplying?.call();
 
+      if (isVideo) {
+        // Set the thumbnail as the still desktop picture first so the lock
+        // screen and previews show something sensible, then play the video in
+        // a window behind the desktop icons.
+        await _applyStillUnderlay(wallpaper);
+        await LiveWallpaperService.instance.setLiveWallpaper(
+          localPath,
+          wallpaper.id,
+        );
+        return WallpaperSetResult.success(
+          message: 'Live wallpaper applied',
+          downloaded: !reused,
+        );
+      }
+
+      // Still image: tear down any live wallpaper window and apply normally.
+      await LiveWallpaperService.instance.clearLiveWallpaper();
       final applied = await _channel.invokeMethod<bool>('setWallpaper', {
         'filePath': localPath,
       });
 
       if (applied == true) {
-        return WallpaperSetResult.success(
-          message: isVideo
-              ? 'Live wallpaper applied as a still image.'
-              : 'Wallpaper applied',
-          downloaded: !reused,
-        );
+        return WallpaperSetResult.success(downloaded: !reused);
       }
       return const WallpaperSetResult.failure(
         'The system could not apply the wallpaper.',
@@ -119,6 +129,20 @@ class WallpaperService {
       return WallpaperSetResult.failure(_describeDioError(e));
     } catch (e) {
       return WallpaperSetResult.failure('Unexpected error: $e');
+    }
+  }
+
+  /// Applies the live wallpaper's thumbnail as the still desktop picture.
+  /// Best-effort: the video window is the primary effect, so a failure here is
+  /// logged rather than surfaced to the user.
+  Future<void> _applyStillUnderlay(Wallpaper wallpaper) async {
+    try {
+      final thumbPath = await _fileStore.ensureLocalThumbFile(wallpaper);
+      await _channel.invokeMethod<bool>('setWallpaper', {
+        'filePath': thumbPath,
+      });
+    } catch (e) {
+      debugPrint('Failed to set live wallpaper still underlay: $e');
     }
   }
 

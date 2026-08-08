@@ -21,6 +21,10 @@ class AppDelegate: FlutterAppDelegate {
     channel.setMethodCallHandler { [weak self] call, result in
       self?.handle(call: call, result: result)
     }
+
+    // Windowed video-behind-desktop live wallpapers.
+    LiveWallpaperManager.shared.register(with: controller)
+    LiveWallpaperManager.shared.restoreIfNeeded()
   }
 
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -38,12 +42,12 @@ class AppDelegate: FlutterAppDelegate {
     case "setWallpaper":
       guard
         let arguments = call.arguments as? [String: Any],
-        let path = arguments["path"] as? String,
+        let path = arguments["filePath"] as? String,
         !path.isEmpty
       else {
         result(FlutterError(
           code: "INVALID_ARGUMENTS",
-          message: "Expected a non-empty 'path' argument.",
+          message: "Expected a non-empty 'filePath' argument.",
           details: nil
         ))
         return
