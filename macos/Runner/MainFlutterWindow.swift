@@ -43,6 +43,10 @@ class MainFlutterWindow: NSWindow {
       }
     }
 
+    // Windowed video-behind-desktop live wallpapers. Registered here (where the
+    // engine is guaranteed to exist) as well as from the AppDelegate.
+    LiveWallpaperManager.shared.register(binaryMessenger: flutterViewController.engine.binaryMessenger)
+
     super.awakeFromNib()
   }
 }
