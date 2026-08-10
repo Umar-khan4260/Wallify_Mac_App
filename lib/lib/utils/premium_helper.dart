@@ -11,10 +11,7 @@ import '../screens/premium/subscription_screen.dart';
 /// so premium state stays reactive and consistent everywhere.
 class PremiumHelper {
   static bool isPremiumUser(BuildContext context) {
-    return Provider.of<SubscriptionProvider>(
-      context,
-      listen: false,
-    ).isPremium;
+    return Provider.of<SubscriptionProvider>(context, listen: false).isPremium;
   }
 
   static bool shouldShowAds(BuildContext context) {
@@ -44,122 +41,123 @@ class PremiumHelper {
   /// Show the "premium required" dialog. The page behind it is dimmed and
   /// blurred (glassy background); the dialog itself keeps the standard look.
   /// "Upgrade Now" pushes the paywall.
-  static void showPremiumRequiredDialog(BuildContext context, {String? feature}) {
+  static void showPremiumRequiredDialog(
+    BuildContext context, {
+    String? feature,
+  }) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Premium Required',
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (BuildContext context, Animation<double> animation,
-          Animation<double> secondaryAnimation) {
-        return Stack(
-          children: [
-            // Glassy background: blur + dim whatever is behind the dialog.
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(color: Colors.black.withOpacity(0.5)),
-              ),
-            ),
-            Center(
-              child: AlertDialog(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+      pageBuilder:
+          (
+            BuildContext context,
+            Animation<double> animation,
+            Animation<double> secondaryAnimation,
+          ) {
+            return Stack(
+              children: [
+                // Glassy background: blur + dim whatever is behind the dialog.
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      color: Colors.black.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
-                title: const Row(
-                  children: [
-                    Icon(
-                      Icons.diamond,
-                      color: Colors.purple,
-                      size: 24,
+                Center(
+                  child: AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Premium Required',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      feature != null
-                          ? 'This $feature requires a premium subscription.'
-                          : 'This feature requires a premium subscription.',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Upgrade to premium to enjoy:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    title: const Row(
                       children: [
+                        Icon(Icons.diamond, color: Colors.purple, size: 24),
+                        SizedBox(width: 8),
                         Text(
-                          '• Unlimited premium wallpapers',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          '• Ad-free experience',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          '• High-quality downloads',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        Text(
-                          '• Exclusive categories',
-                          style: TextStyle(fontSize: 14),
+                          'Premium Required',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text(
-                      'Maybe Later',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SubscriptionScreen(),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          feature != null
+                              ? 'This $feature requires a premium subscription.'
+                              : 'This feature requires a premium subscription.',
+                          style: const TextStyle(fontSize: 16),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Upgrade to premium to enjoy:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '• Unlimited premium wallpapers',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              '• Ad-free experience',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              '• High-quality downloads',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              '• Exclusive categories',
+                              style: TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    child: const Text('Upgrade Now'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Maybe Later',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          SubscriptionScreen.show(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Upgrade Now'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
+                ),
+              ],
+            );
+          },
     );
   }
 
@@ -176,11 +174,7 @@ class PremiumHelper {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.diamond,
-            size: size,
-            color: Colors.white,
-          ),
+          Icon(Icons.diamond, size: size, color: Colors.white),
           const SizedBox(width: 2),
           Text(
             'PRO',
@@ -240,18 +234,11 @@ class PremiumHelper {
           ),
           title: const Row(
             children: [
-              Icon(
-                Icons.warning,
-                color: Colors.orange,
-                size: 24,
-              ),
+              Icon(Icons.warning, color: Colors.orange, size: 24),
               SizedBox(width: 8),
               Text(
                 'Subscription Expiring Soon',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -274,11 +261,7 @@ class PremiumHelper {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SubscriptionScreen(),
-                  ),
-                );
+                SubscriptionScreen.show(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
