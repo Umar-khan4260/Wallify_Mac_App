@@ -1,13 +1,17 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../Provider/SubscriptionProvider.dart';
-import 'premium_status_screen.dart';
+import '../../theme/app_colors.dart';
 
-/// Paywall: plan cards driven by the real store products (prices come from
-/// [SubscriptionProvider]'s [ProductDetails]), a purchase + restore flow and
-/// the standard subscription legal footer.
+/// Paywall presented as a frosted-glass dialog that floats over a blurred,
+/// gradient background – matching the Wallify blue theme.
+///
+/// Shows three plan cards and a "Continue" CTA, with a loading dialog that
+/// also has a glassmorphism treatment.
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
 
@@ -19,24 +23,31 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // 0 = weekly · 1 = monthly · 2 = yearly
+  int _selectedPlan = 2;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
+    _fadeAnimation = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
+      curve: Curves.easeOut,
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _animationController.forward();
 
-    // Refresh subscription plans (real prices) when the paywall loads.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SubscriptionProvider>().refreshSubscriptionPlans();
     });
@@ -48,829 +59,624 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     super.dispose();
   }
 
-  void _handlePurchase(String productId, SubscriptionProvider provider) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return PopScope(
-          canPop: false,
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B4EFF)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Processing your purchase...',
-                    style: TextStyle(
-                      color: Colors.grey[800],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  // ─── helpers ────────────────────────────────────────────────────────────────
+
+  static const _productIds = [
+    SubscriptionProvider.weeklyProductId,
+    SubscriptionProvider.monthlyProductId,
+    SubscriptionProvider.yearlyProductId,
+  ];
+
+  Color get _primaryBlue => AppColors.primary;
+  Color get _lightBlue => const Color(0xFF2979FF);
+  Color get _accentBlue => const Color(0xFF448AFF);
+
+  void _handlePurchase(SubscriptionProvider provider) async {
+    final productId = _productIds[_selectedPlan];
+    _showGlassyLoadingDialog('Processing your purchase…');
 
     try {
       await provider.purchaseSubscription(productId);
-
-      // Wait a moment for the store transaction to be delivered via the
-      // purchase stream and the entitlement to be granted.
       await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // close loading
-      }
-
-      if (provider.isPremium) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Successfully subscribed! Enjoy premium features.',
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          Navigator.pop(context);
-        }
+      if (provider.isPremium && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Welcome to Wallify Premium! 🎉'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // close loading
-      }
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Purchase failed: ${e.toString()}'),
+            content: Text('Purchase failed: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
   }
 
-  void _handleRestorePurchases(SubscriptionProvider provider) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return PopScope(
-          canPop: false,
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6B4EFF)),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Restoring purchases...',
-                    style: TextStyle(
-                      color: Colors.grey[800],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  void _handleRestore(SubscriptionProvider provider) async {
+    _showGlassyLoadingDialog('Restoring purchases…');
 
     try {
       await provider.restorePurchases();
-
-      // Restored purchases arrive on the purchase stream; give it a moment.
       await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // close loading
-      }
-
-      if (provider.isPremium) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Purchases restored successfully!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          Navigator.pop(context);
-        }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No purchases to restore'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).pop(); // close loading
-      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Restore failed: ${e.toString()}'),
+            content: Text(
+              provider.isPremium
+                  ? 'Purchases restored successfully!'
+                  : 'No active purchases found.',
+            ),
+            backgroundColor: provider.isPremium ? Colors.green : Colors.orange,
+          ),
+        );
+      }
+      if (provider.isPremium && mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Restore failed: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Consumer<SubscriptionProvider>(
-      builder: (context, subscriptionProvider, _) {
-        return Scaffold(
-          backgroundColor: isDark
-              ? const Color(0xFF0A0E21)
-              : const Color(0xFFF8F9FA),
-          appBar: AppBar(
-            title: const Text(
-              '✨ Premium',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            centerTitle: true,
-            backgroundColor: isDark
-                ? const Color(0xFF1D1E33)
-                : Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [const Color(0xFF1D1E33), const Color(0xFF2A2D4A)]
-                      : [Colors.white, const Color(0xFFF0F0F5)],
+  void _showGlassyLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                width: 240,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 36,
+                  horizontal: 32,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3,
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          body: FadeTransition(
-            opacity: _fadeAnimation,
-            child: subscriptionProvider.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(20.0),
+        ),
+      ),
+    );
+  }
+
+  // ─── build ───────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SubscriptionProvider>(
+      builder: (context, provider, _) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              // ── animated gradient backdrop ──────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      _primaryBlue.withValues(alpha: 0.95),
+                      const Color(0xFF001D6C),
+                      _lightBlue.withValues(alpha: 0.9),
+                      const Color(0xFF0A1628),
+                    ],
+                    stops: const [0.0, 0.35, 0.65, 1.0],
+                  ),
+                ),
+              ),
+
+              // ── decorative blurred circles ──────────────────────────────
+              Positioned(
+                top: -80,
+                left: -60,
+                child: _blurCircle(220, _accentBlue.withValues(alpha: 0.3)),
+              ),
+              Positioned(
+                bottom: 60,
+                right: -80,
+                child: _blurCircle(260, _primaryBlue.withValues(alpha: 0.25)),
+              ),
+              Positioned(
+                top: MediaQuery.of(context).size.height * 0.4,
+                left: MediaQuery.of(context).size.width * 0.5,
+                child: _blurCircle(180, Colors.white.withValues(alpha: 0.05)),
+              ),
+
+              // ── glass panel ─────────────────────────────────────────────
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SafeArea(
                     child: Column(
                       children: [
-                        _buildHeader(subscriptionProvider),
-                        if (subscriptionProvider.isPremium) ...[
-                          const SizedBox(height: 16),
-                          _buildStatusButton(),
-                        ],
-                        const SizedBox(height: 24),
-                        _buildFeaturesList(),
-                        const SizedBox(height: 32),
-                        _buildSubscriptionPlans(subscriptionProvider),
-                        const SizedBox(height: 24),
-                        _buildRestoreButton(subscriptionProvider),
-                        const SizedBox(height: 24),
-                        _buildFooter(),
-                        const SizedBox(height: 20),
+                        // close button
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: _GlassIconButton(
+                              icon: Icons.close,
+                              onTap: () => Navigator.pop(context),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                _buildTitle(),
+                                const SizedBox(height: 28),
+                                _buildFeatureChips(),
+                                const SizedBox(height: 32),
+                                _buildPlanCards(provider),
+                                const SizedBox(height: 28),
+                                _buildContinueButton(provider),
+                                const SizedBox(height: 16),
+                                _buildFooter(provider),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildStatusButton() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PremiumStatusScreen(),
-            ),
-          );
-        },
-        icon: Icon(
-          Icons.verified,
-          color: isDark ? Colors.white : const Color(0xFF6B4EFF),
-        ),
-        label: Text(
-          'You\'re Premium — View Subscription Status',
-          style: TextStyle(
-            color: isDark ? Colors.white : const Color(0xFF6B4EFF),
-          ),
-        ),
-      ),
-    );
-  }
+  // ─── sections ────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(SubscriptionProvider subscriptionProvider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF6B4EFF),
-            Color(0xFF4ECBFF),
-            Color(0xFF7B42FF),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6B4EFF).withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.diamond,
-              color: Colors.white,
-              size: 48,
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Go Premium',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'From ${subscriptionProvider.getLocalizedPrice('weekly')}/week',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              '🔥 Unlimited Premium Content',
-              style: TextStyle(
+  Widget _buildTitle() {
+    return Column(
+      children: [
+        // diamond icon in glass circle
+        ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.diamond_outlined,
                 color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                size: 36,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeaturesList() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final features = [
-      {
-        'icon': Icons.wallpaper,
-        'title': 'Unlimited Premium Wallpapers',
-        'description': 'Access to exclusive HD wallpapers',
-        'color': const Color(0xFF6B4EFF),
-      },
-      {
-        'icon': Icons.block,
-        'title': 'Ad-Free Experience',
-        'description': 'Browse without interruptions',
-        'color': const Color(0xFFFF6B9D),
-      },
-      {
-        'icon': Icons.download,
-        'title': 'Unlimited Downloads',
-        'description': 'Download as many wallpapers as you want',
-        'color': const Color(0xFF4ECBFF),
-      },
-      {
-        'icon': Icons.high_quality,
-        'title': '4K Quality Images',
-        'description': 'Get the highest resolution wallpapers',
-        'color': const Color(0xFFFFA621),
-      },
-      {
-        'icon': Icons.new_releases,
-        'title': 'Early Access',
-        'description': 'Get new wallpapers before everyone else',
-        'color': const Color(0xFF00D9A5),
-      },
-      {
-        'icon': Icons.palette,
-        'title': 'Exclusive Categories',
-        'description': 'Access to premium-only categories',
-        'color': const Color(0xFFFF4B55),
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 16),
-          child: Text(
-            'What You Get',
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Unlock Premium',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.3,
           ),
         ),
-        ...features.map(
-          (feature) => _buildFeatureItem(
-            feature['icon'] as IconData,
-            feature['title'] as String,
-            feature['description'] as String,
-            feature['color'] as Color,
+        const SizedBox(height: 8),
+        Text(
+          'Get unlimited wallpapers, 4K downloads\nand an ad-free experience.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.75),
+            fontSize: 14.5,
+            height: 1.55,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFeatureItem(
-    IconData icon,
-    String title,
-    String description,
-    Color color,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1D1E33) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? color.withOpacity(0.3) : color.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.check_circle,
-            color: color,
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubscriptionPlans(SubscriptionProvider subscriptionProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (subscriptionProvider.isLoadingPlans) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1D1E33) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            const CircularProgressIndicator(
-              color: Color(0xFF6B4EFF),
-              strokeWidth: 3,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Loading subscription plans...',
-              style: TextStyle(
-                color: isDark ? Colors.white70 : Colors.grey[600],
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // All three plans, driven by the real product ids. Prices are pulled from
-    // the store's ProductDetails via the provider (no hardcoded strings).
-    // Yearly is the highlighted/"most popular" plan with a computed savings
-    // badge (null until real prices are loaded → badge hidden).
-    final plans = [
-      {
-        'id': SubscriptionProvider.weeklyProductId,
-        'title': 'Premium Wallpapers',
-        'duration': '7 days',
-        'color': const Color(0xFFFF6B9D),
-        'popular': false,
-        'description': subscriptionProvider.getLocalizedPrice('weekly'),
-      },
-      {
-        'id': SubscriptionProvider.monthlyProductId,
-        'title': 'Live Videos Wallpaper',
-        'duration': '30 days',
-        'color': const Color(0xFF6B4EFF),
-        'popular': false,
-        'description': subscriptionProvider.getLocalizedPrice('monthly'),
-      },
-      {
-        'id': SubscriptionProvider.yearlyProductId,
-        'title': 'All Premium & Remove Ads',
-        'duration': '12 months',
-        'color': const Color(0xFF00D9A5),
-        'popular': true,
-        'savings': subscriptionProvider.getSavingsAmount(),
-        'description': subscriptionProvider.getLocalizedPrice('yearly'),
-      },
+  Widget _buildFeatureChips() {
+    const features = [
+      (Icons.wallpaper_rounded, 'Unlimited Wallpapers'),
+      (Icons.block, 'Ad-Free Experience'),
+      (Icons.high_quality, '4K Downloads'),
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 16),
-          child: Text(
-            'Choose Your Plan',
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        ...plans
-            .map(
-              (plan) => _buildSubscriptionPlan(
-                plan['id'] as String,
-                plan['title'] as String,
-                plan['duration'] as String,
-                plan['color'] as Color,
-                plan['popular'] as bool,
-                plan['savings'] as String?,
-                subscriptionProvider,
-                description: plan['description'] as String?,
-              ),
-            ),
-      ],
-    );
-  }
-
-  Widget _buildSubscriptionPlan(
-    String productId,
-    String title,
-    String duration,
-    Color color,
-    bool isPopular,
-    String? savings,
-    SubscriptionProvider subscriptionProvider, {
-    String? description,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final price = description ?? subscriptionProvider.getProductPrice(productId);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: isPopular
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  color,
-                  color.withOpacity(0.8),
-                ],
-              )
-            : null,
-        color: !isPopular
-            ? (isDark ? const Color(0xFF1D1E33) : Colors.white)
-            : null,
-        borderRadius: BorderRadius.circular(20),
-        border: !isPopular
-            ? Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.2),
-                width: 1.5,
-              )
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: isPopular
-                ? color.withOpacity(0.3)
-                : Colors.black.withOpacity(0.05),
-            blurRadius: isPopular ? 20 : 10,
-            offset: Offset(0, isPopular ? 8 : 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          if (isPopular)
-            Positioned(
-              top: 16,
-              right: 16,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: features.map((f) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(50),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.star,
-                      color: color,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
+                    Icon(f.$1, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
                     Text(
-                      'POPULAR',
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                      f.$2,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  title,
-                                  style: TextStyle(
-                                    color: isPopular
-                                        ? Colors.white
-                                        : (isDark ? Colors.white : Colors.black),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildPlanCards(SubscriptionProvider provider) {
+    final plans = [
+      _PlanData(
+        id: SubscriptionProvider.weeklyProductId,
+        label: 'Weekly',
+        badge: null,
+        price: provider.getLocalizedPrice('weekly'),
+        period: '/ week',
+        subtitle: 'Cancel anytime',
+      ),
+      _PlanData(
+        id: SubscriptionProvider.monthlyProductId,
+        label: 'Monthly',
+        badge: null,
+        price: provider.getLocalizedPrice('monthly'),
+        period: '/ month',
+        subtitle: 'Cancel anytime',
+      ),
+      _PlanData(
+        id: SubscriptionProvider.yearlyProductId,
+        label: 'Yearly',
+        badge: 'Best Value',
+        price: provider.getLocalizedPrice('yearly'),
+        period: '/ year',
+        subtitle: provider.getSavingsAmount() != null
+            ? 'Save ${provider.getSavingsAmount()} vs. Monthly'
+            : 'Most popular',
+      ),
+    ];
+
+    return Column(
+      children: plans.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final plan = entry.value;
+        final selected = _selectedPlan == idx;
+
+        return GestureDetector(
+          onTap: () => setState(() => _selectedPlan = idx),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.8)
+                          : Colors.white.withValues(alpha: 0.15),
+                      width: selected ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      // selection indicator
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: selected ? Colors.white : Colors.transparent,
+                          border: Border.all(
+                            color: Colors.white.withValues(
+                              alpha: selected ? 1 : 0.4,
+                            ),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: selected
+                            ? Icon(Icons.check, size: 14, color: _primaryBlue)
+                            : null,
+                      ),
+                      const SizedBox(width: 16),
+
+                      // label + subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  plan.label,
+                                  style: const TextStyle(
+                                    color: Colors.white,
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                              ),
-                              if (savings != null) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isPopular
-                                        ? Colors.white
-                                        : const Color(0xFFFF4B55),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    savings,
-                                    style: TextStyle(
-                                      color: isPopular ? color : Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                if (plan.badge != null) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(50),
+                                    ),
+                                    child: Text(
+                                      plan.badge!,
+                                      style: TextStyle(
+                                        color: _primaryBlue,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              plan.subtitle,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // price
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
                           Text(
-                            duration,
+                            plan.price.isEmpty ? '—' : plan.price,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            plan.period,
                             style: TextStyle(
-                              color: isPopular
-                                  ? Colors.white.withOpacity(0.8)
-                                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
-                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      price,
-                      style: TextStyle(
-                        color: isPopular
-                            ? Colors.white
-                            : (isDark ? Colors.white : Colors.black),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () =>
-                          _handlePurchase(productId, subscriptionProvider),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isPopular ? Colors.white : color,
-                        foregroundColor: isPopular ? color : Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        'Subscribe',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildRestoreButton(SubscriptionProvider subscriptionProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return TextButton(
-      onPressed: () => _handleRestorePurchases(subscriptionProvider),
-      child: Text(
-        'Restore Purchases',
-        style: TextStyle(
-          color: isDark ? Colors.white70 : Colors.grey[600],
-          decoration: TextDecoration.underline,
+  Widget _buildContinueButton(SubscriptionProvider provider) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: provider.isLoading ? null : () => _handlePurchase(provider),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: _primaryBlue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: const Text(
+          'Continue',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.3,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildFooter() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          Text(
-            'Subscription will be charged to your account. Subscriptions '
-            'automatically renew unless auto-renewal is turned off at least '
-            '24 hours before the end of the current period.',
-            style: TextStyle(
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-              fontSize: 12,
+  Widget _buildFooter(SubscriptionProvider provider) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _footerLink('Restore Purchases', () => _handleRestore(provider)),
+        _footerDot(),
+        _footerLink(
+          'Terms of Service',
+          () => launchUrl(Uri.parse('https://example.com/terms')),
+        ),
+        _footerDot(),
+        _footerLink(
+          'Privacy Policy',
+          () => launchUrl(Uri.parse('https://example.com/privacy')),
+        ),
+      ],
+    );
+  }
+
+  Widget _footerLink(String text, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Text(
+      text,
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.55),
+        fontSize: 11.5,
+        decoration: TextDecoration.underline,
+        decorationColor: Colors.white.withValues(alpha: 0.3),
+      ),
+    ),
+  );
+
+  Widget _footerDot() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 6),
+    child: Text(
+      '·',
+      style: TextStyle(
+        color: Colors.white.withValues(alpha: 0.35),
+        fontSize: 14,
+      ),
+    ),
+  );
+
+  // ─── helper widgets ───────────────────────────────────────────────────────────
+
+  Widget _blurCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    );
+  }
+}
+
+// ─── data model ───────────────────────────────────────────────────────────────
+
+class _PlanData {
+  final String id;
+  final String label;
+  final String? badge;
+  final String price;
+  final String period;
+  final String subtitle;
+
+  const _PlanData({
+    required this.id,
+    required this.label,
+    this.badge,
+    required this.price,
+    required this.period,
+    required this.subtitle,
+  });
+}
+
+// ─── glass icon button ────────────────────────────────────────────────────────
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GlassIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
-            textAlign: TextAlign.center,
+            child: Icon(icon, color: Colors.white, size: 18),
           ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () {
-              final appUrl =
-                  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-              launchUrl(Uri.parse(appUrl));
-            },
-            child: Text(
-              'Terms of Service',
-              style: TextStyle(
-                color: isDark ? Colors.blue[300] : Colors.blue,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

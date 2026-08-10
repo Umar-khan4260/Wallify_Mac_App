@@ -82,6 +82,18 @@ class SubscriptionProvider extends ChangeNotifier {
     yearlyProductId,
   ];
 
+  // ── Fallback display pricing ───────────────────────────────────────────────
+  // Shown on the paywall whenever the store product list isn't loaded yet
+  // (e.g. the StoreKit Configuration file is not attached in Xcode, or the
+  // products don't exist in App Store Connect / Play Console yet). Real store
+  // prices always override these once ProductDetails arrive. Display-only:
+  // purchases always go through the store's ProductDetails.
+  static const Map<String, double> fallbackPrices = {
+    weeklyProductId: 5.0,
+    monthlyProductId: 20.0,
+    yearlyProductId: 100.0,
+  };
+
   // ── SharedPreferences keys (read-through entitlement cache) ───────────────
   static const String _prefsKeyPremium = 'subscription_is_premium';
   static const String _prefsKeyType = 'subscription_type';
@@ -208,9 +220,9 @@ class SubscriptionProvider extends ChangeNotifier {
     final product = _productFor(productId);
     if (product == null) {
       throw StateError(
-        'Could not find product "$productId". Make sure it exists in '
-        'App Store Connect / Play Console and that refreshSubscriptionPlans() '
-        'has loaded it.',
+        'Subscription "$productId" was not found. Add it in App Store '
+        'Connect / Play Console, or attach a StoreKit Configuration file to '
+        'the Xcode scheme for local testing, then restart the app.',
       );
     }
 
@@ -264,20 +276,33 @@ class SubscriptionProvider extends ChangeNotifier {
   ProductDetails? productFor(String productId) => _productFor(productId);
 
   /// Real, store-localized price string (e.g. "$4.99") for
-  /// "weekly" / "monthly" / "yearly". Returns "--" while plans are loading.
+  /// "weekly" / "monthly" / "yearly". Falls back to [fallbackPrices] while the
+  /// store products aren't loaded. Returns "--" only for unknown ids.
   String getLocalizedPrice(String period) =>
       getProductPrice(_productIdForPeriod(period));
 
-  /// Real, store-localized price string for a raw [productId].
+  /// Real, store-localized price string for a raw [productId]. Falls back to
+  /// [fallbackPrices] (e.g. "$5", "$20", "$100") when the store product list
+  /// isn't loaded yet.
   String getProductPrice(String productId) {
     final product = _productFor(productId);
     if (product != null && product.price.isNotEmpty) return product.price;
+    final fallback = fallbackPrices[productId];
+    if (fallback != null) return _formatFallbackPrice(fallback);
     return '--';
   }
 
+  String _formatFallbackPrice(double value) {
+    if (value == value.roundToDouble()) {
+      return '\$${value.round()}';
+    }
+    return '\$${value.toStringAsFixed(2)}';
+  }
+
   /// "Save X%" for the yearly plan vs 12 × the monthly price, computed from
-  /// the store's numeric [ProductDetails.rawPrice] (locale-independent).
-  /// Returns null when either price is missing/zero or there is no saving.
+  /// the store's numeric [ProductDetails.rawPrice] (locale-independent) or the
+  /// [fallbackPrices] when store products aren't loaded. Returns null when
+  /// there is no saving or prices are unavailable.
   ///
   /// `rawPrice`/`currencyCode` (in_app_purchase >= 3.1.0) give real numeric
   /// prices, so this is computed reliably instead of parsing the localized
@@ -285,14 +310,21 @@ class SubscriptionProvider extends ChangeNotifier {
   String? getSavingsAmount() {
     final yearly = _productFor(yearlyProductId);
     final monthly = _productFor(monthlyProductId);
-    if (yearly == null || monthly == null) return null;
-    final monthlyTotal = monthly.rawPrice * 12;
-    if (monthlyTotal <= 0 || yearly.rawPrice <= 0) return null;
+    final yearlyPrice = yearly?.rawPrice ?? fallbackPrices[yearlyProductId];
+    final monthlyPrice = monthly?.rawPrice ?? fallbackPrices[monthlyProductId];
+    if (yearlyPrice == null || monthlyPrice == null) return null;
+    final monthlyTotal = monthlyPrice * 12;
+    if (monthlyTotal <= 0 || yearlyPrice <= 0) return null;
     final percent =
-        ((monthlyTotal - yearly.rawPrice) / monthlyTotal * 100).round();
+        ((monthlyTotal - yearlyPrice) / monthlyTotal * 100).round();
     if (percent <= 0) return null;
     return 'Save $percent%';
   }
+
+  /// Whether the store returned our product list. False when products are not
+  /// configured (missing StoreKit Configuration in Xcode / App Store Connect),
+  /// which the paywall surfaces as a hint.
+  bool get hasLoadedPlans => _products.isNotEmpty;
 
   // ── Purchase-stream handling ───────────────────────────────────────────────
 
