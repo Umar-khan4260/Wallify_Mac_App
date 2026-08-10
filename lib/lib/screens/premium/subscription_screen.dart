@@ -76,7 +76,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     _showGlassyLoadingDialog('Processing your purchase…');
 
     try {
-      await provider.purchaseSubscription(productId);
+      // Using mockPurchase for local testing without Xcode
+      await provider.mockPurchase(productId);
+
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
 

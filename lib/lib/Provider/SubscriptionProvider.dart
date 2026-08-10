@@ -244,6 +244,28 @@ class SubscriptionProvider extends ChangeNotifier {
     }
   }
 
+  /// Simulates a successful purchase for local testing without Xcode StoreKit.
+  Future<void> mockPurchase(String productId) async {
+    _isPurchasing = true;
+    _notify();
+
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 2));
+
+    _isPremium = true;
+    _subscriptionProductId = productId;
+    _subscriptionType = _typeLabelForProduct(productId);
+    _subscriptionPurchaseDate = DateTime.now();
+    _subscriptionExpiry = _computeBestEffortExpiry(
+      productId,
+      _subscriptionPurchaseDate,
+    );
+    await _persistEntitlement();
+
+    _isPurchasing = false;
+    _notify();
+  }
+
   /// Asks the store to restore prior purchases. Restored entitlements arrive
   /// on the purchase stream (restored status) — same code path as a purchase.
   /// Throws when the store is unavailable or restore fails.
@@ -315,8 +337,7 @@ class SubscriptionProvider extends ChangeNotifier {
     if (yearlyPrice == null || monthlyPrice == null) return null;
     final monthlyTotal = monthlyPrice * 12;
     if (monthlyTotal <= 0 || yearlyPrice <= 0) return null;
-    final percent =
-        ((monthlyTotal - yearlyPrice) / monthlyTotal * 100).round();
+    final percent = ((monthlyTotal - yearlyPrice) / monthlyTotal * 100).round();
     if (percent <= 0) return null;
     return 'Save $percent%';
   }
