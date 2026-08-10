@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../Provider/SubscriptionProvider.dart';
 import '../data/download_service.dart';
 import '../data/favorites_service.dart';
 import '../data/wallpaper_service.dart';
 import '../models/wallpaper.dart';
 import '../theme/app_dimens.dart';
+import '../utils/premium_helper.dart';
 
 /// Shows one wallpaper thumbnail with its title/resolution and toggleable
 /// favorite heart + download button. Distinct from `CategoryCard`
@@ -27,8 +30,20 @@ class _WallpaperCardState extends State<WallpaperCard> {
   bool _isSettingWallpaper = false;
   double _setProgress = 0.0;
 
+  /// True when the user may use this wallpaper. Free wallpapers always pass.
+  /// For Premium-category wallpapers it checks the subscription and, when not
+  /// premium, shows the "upgrade required" dialog and returns false so the
+  /// Set/Download action never runs. Browsing is never blocked.
+  bool _hasAccessOrShowPaywall() {
+    if (!widget.wallpaper.isPremiumCategory) return true;
+    if (PremiumHelper.canAccessPremiumWallpapers(context)) return true;
+    PremiumHelper.showPremiumRequiredDialog(context, feature: 'wallpaper');
+    return false;
+  }
+
   Future<void> _handleSetWallpaper() async {
     if (_isSettingWallpaper) return;
+    if (!_hasAccessOrShowPaywall()) return;
 
     final messenger = ScaffoldMessenger.of(context);
     final errorColor = Theme.of(context).colorScheme.error;
@@ -199,6 +214,39 @@ class _WallpaperCardState extends State<WallpaperCard> {
                           ),
                         ),
                       ),
+                      if (widget.wallpaper.isPremiumCategory &&
+                          !context.watch<SubscriptionProvider>().isPremium) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.lock_rounded,
+                                color: Colors.amberAccent,
+                                size: 11,
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                'PREMIUM',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -225,6 +273,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                               return GestureDetector(
                                 onTap: () {
                                   if (!isDone && !isInProgress) {
+                                    if (!_hasAccessOrShowPaywall()) return;
                                     _dlService.downloadWallpaper(
                                       widget.wallpaper,
                                     );

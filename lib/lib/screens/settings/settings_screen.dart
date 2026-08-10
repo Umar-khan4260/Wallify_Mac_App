@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_dimens.dart';
 import '../../theme/theme_controller.dart';
+import '../premium/subscription_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -11,6 +12,23 @@ class SettingsScreen extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.marginEdge),
       children: [
+        const Divider(),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.diamond_outlined, color: Color(0xFF6B4EFF)),
+          title: const Text('Wallify Premium'),
+          subtitle: const Text('Manage your premium subscription'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SubscriptionScreen(),
+              ),
+            );
+          },
+        ),
+        const Divider(),
         ValueListenableBuilder<ThemeMode>(
           valueListenable: themeNotifier,
           builder: (context, mode, _) {

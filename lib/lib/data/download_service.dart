@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Provider/SubscriptionProvider.dart';
 import '../models/wallpaper.dart';
 
 // Path-provider & dart:io are only available on native (non-web) platforms.
@@ -48,6 +49,15 @@ class DownloadService {
 
   Future<void> downloadWallpaper(Wallpaper wallpaper) async {
     if (isDownloaded(wallpaper.id) || isDownloading(wallpaper.id)) return;
+
+    // Premium-category wallpapers require an active subscription. This is a
+    // service-level guard (defense in depth) — the UI also gates before
+    // calling downloadWallpaper. No context here, so use the static handle.
+    if (wallpaper.isPremiumCategory &&
+        !(SubscriptionProvider.instance?.isPremium ?? false)) {
+      debugPrint('Blocked download: premium wallpaper is not purchased.');
+      return;
+    }
 
     try {
       _updateProgress(wallpaper.id, 0.0);
