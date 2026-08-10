@@ -31,4 +31,16 @@ class ApiConfig {
       'https://nature-new.sunztech.com/upload/thumbs/';
   static String get thumbImageBaseUrl =>
       kIsWeb ? '$_proxyPrefix$_rawThumbImageBaseUrl' : _rawThumbImageBaseUrl;
+
+  /// Wallpapers in this category are paid and require a premium unlock.
+  ///
+  /// Matched by NAME as a fallback (see [Wallpaper.isPremiumCategory] for the
+  /// fragility warning). If you know the real numeric id of the "Premium"
+  /// category in `get_categories`, set [premiumCategoryId] so the app can
+  /// prefer an id match and stop relying on the name.
+  static const String premiumCategoryName = 'Premium';
+
+  /// Numeric id of the paid category from `get_categories`. 0 means "unknown"
+  /// — the app then falls back to matching [premiumCategoryName] by name.
+  static const int premiumCategoryId = 0;
 }

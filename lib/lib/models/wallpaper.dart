@@ -16,6 +16,27 @@ class Wallpaper {
   /// True when the original file is a video (e.g. .mp4).
   final bool isVideo;
 
+  /// Category id from the API response (`category_id`), when the wallpaper
+  /// endpoint includes one. Null when absent — many endpoints only return
+  /// `category_name`.
+  final int? categoryId;
+
+  /// True when this wallpaper belongs to the paid category.
+  ///
+  /// FRAGILITY WARNING: matching is by category NAME (case-insensitive) as a
+  /// fallback, because the wallpaper endpoint may not return `category_id`.
+  /// A backend rename/re-case/retype ("Premium" vs "premium" vs "Premium ")
+  /// silently flips this getter. Prefer the id match: it is used automatically
+  /// when the response carries [categoryId] AND [ApiConfig.premiumCategoryId]
+  /// is configured to a non-zero value.
+  bool get isPremiumCategory {
+    if (categoryId != null && ApiConfig.premiumCategoryId != 0) {
+      return categoryId == ApiConfig.premiumCategoryId;
+    }
+    return category.trim().toLowerCase() ==
+        ApiConfig.premiumCategoryName.trim().toLowerCase();
+  }
+
   /// The raw filename stored by FavoritesService.
   String get rawImage => _rawImage;
 
@@ -27,6 +48,7 @@ class Wallpaper {
     required String imageUrl,
     String thumbUrl = '',
     this.isVideo = false,
+    this.categoryId,
   }) : _rawImage = imageUrl,
        _rawThumb = thumbUrl;
 
@@ -45,7 +67,15 @@ class Wallpaper {
       imageUrl: rawImage,
       thumbUrl: rawThumb,
       isVideo: isVideo,
+      categoryId: _parseCategoryId(json['category_id']),
     );
+  }
+
+  /// `category_id` may arrive as an int or as a numeric string — normalize it.
+  static int? _parseCategoryId(Object? raw) {
+    if (raw is int) return raw;
+    if (raw is String) return int.tryParse(raw);
+    return null;
   }
 
   /// The URL to display as the card thumbnail.

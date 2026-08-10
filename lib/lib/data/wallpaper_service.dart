@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models/wallpaper.dart';
+import '../Provider/SubscriptionProvider.dart';
 import 'live_wallpaper_service.dart';
 import 'wallpaper_service_io.dart'
     if (dart.library.html) 'wallpaper_service_web.dart'
@@ -79,6 +80,15 @@ class WallpaperService {
     if (!isSupported) {
       return const WallpaperSetResult.failure(
         'Setting wallpapers is only supported on macOS.',
+      );
+    }
+
+    // Premium-category wallpapers require an active subscription. Service-level
+    // guard (defense in depth) — the UI gates before calling setWallpaper too.
+    if (wallpaper.isPremiumCategory &&
+        !(SubscriptionProvider.instance?.isPremium ?? false)) {
+      return const WallpaperSetResult.failure(
+        'This is a Premium wallpaper. Purchase Premium to use it.',
       );
     }
 
