@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -39,101 +41,121 @@ class PremiumHelper {
     return isPremiumUser(context);
   }
 
-  /// Show the "premium required" dialog. "Upgrade Now" pushes the paywall.
+  /// Show the "premium required" dialog. The page behind it is dimmed and
+  /// blurred (glassy background); the dialog itself keeps the standard look.
+  /// "Upgrade Now" pushes the paywall.
   static void showPremiumRequiredDialog(BuildContext context, {String? feature}) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: Row(
-            children: [
-              const Icon(
-                Icons.diamond,
-                color: Colors.purple,
-                size: 24,
+      barrierDismissible: true,
+      barrierLabel: 'Premium Required',
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
+        return Stack(
+          children: [
+            // Glassy background: blur + dim whatever is behind the dialog.
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(color: Colors.black.withOpacity(0.5)),
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Premium Required',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            ),
+            Center(
+              child: AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                feature != null
-                    ? 'This $feature requires a premium subscription.'
-                    : 'This feature requires a premium subscription.',
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Upgrade to premium to enjoy:',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                title: const Row(
+                  children: [
+                    Icon(
+                      Icons.diamond,
+                      color: Colors.purple,
+                      size: 24,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Premium Required',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '• Unlimited premium wallpapers',
-                    style: TextStyle(fontSize: 14),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      feature != null
+                          ? 'This $feature requires a premium subscription.'
+                          : 'This feature requires a premium subscription.',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Upgrade to premium to enjoy:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '• Unlimited premium wallpapers',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          '• Ad-free experience',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          '• High-quality downloads',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                        Text(
+                          '• Exclusive categories',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text(
+                      'Maybe Later',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
-                  Text(
-                    '• Ad-free experience',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  Text(
-                    '• High-quality downloads',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  Text(
-                    '• Exclusive categories',
-                    style: TextStyle(fontSize: 14),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SubscriptionScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('Upgrade Now'),
                   ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'Maybe Later',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SubscriptionScreen(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Upgrade Now'),
             ),
           ],
         );
