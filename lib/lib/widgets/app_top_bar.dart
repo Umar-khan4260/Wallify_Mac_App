@@ -139,9 +139,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 onPressed: () {
-                  themeNotifier.value = isDark
-                      ? ThemeMode.light
-                      : ThemeMode.dark;
+                  ThemeController.instance.toggleTheme();
                 },
               );
             },
