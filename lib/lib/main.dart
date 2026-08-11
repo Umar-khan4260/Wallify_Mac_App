@@ -5,6 +5,7 @@ import 'Provider/SubscriptionProvider.dart';
 import 'data/download_service.dart';
 import 'data/favorites_service.dart';
 import 'screens/main_screen.dart';
+import 'screens/premium/subscription_screen.dart';
 import 'theme/app_colors.dart';
 import 'theme/theme_controller.dart';
 
@@ -51,11 +52,44 @@ class WallifyApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          home: const MainScreen(),
+          home: const StartupPaywallGate(child: MainScreen()),
           debugShowCheckedModeBanner: false,
         );
       },
       ),
     );
   }
+}
+
+/// Wraps the main screen and, once on startup, pushes the paywall over it when
+/// the user has no active subscription. Dismissible: after closing it the user
+/// can browse freely; it reappears on the next launch until they subscribe.
+class StartupPaywallGate extends StatefulWidget {
+  const StartupPaywallGate({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<StartupPaywallGate> createState() => _StartupPaywallGateState();
+}
+
+class _StartupPaywallGateState extends State<StartupPaywallGate> {
+  bool _checked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_checked) return;
+    _checked = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final isPremium = context.read<SubscriptionProvider>().isPremium;
+      if (!isPremium) {
+        SubscriptionScreen.show(context);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
