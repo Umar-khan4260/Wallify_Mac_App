@@ -84,6 +84,7 @@ class _StartupPaywallGateState extends State<StartupPaywallGate> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final isPremium = context.read<SubscriptionProvider>().isPremium;
+      debugPrint('StartupPaywallGate: isPremium=$isPremium');
       if (!isPremium) {
         SubscriptionScreen.show(context);
       }
