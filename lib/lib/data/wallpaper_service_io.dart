@@ -55,16 +55,27 @@ class WallpaperFileStore {
   }
 
   /// The on-disk path if the file is already cached, otherwise null.
+  /// A cached file that is empty (e.g. a failed 200 response) is discarded so
+  /// it gets downloaded again instead of breaking playback forever.
   Future<String?> localFileFor(Wallpaper wallpaper) async {
     final path = await _pathFor(wallpaper, wallpaper.mediaUrl);
-    return File(path).existsSync() ? path : null;
+    return _cachedPath(File(path));
   }
 
   /// The on-disk thumbnail path if already cached, otherwise null.
   /// Used for live (video) wallpapers, which macOS can only apply as a still.
   Future<String?> localThumbFor(Wallpaper wallpaper) async {
     final path = await _pathFor(wallpaper, wallpaper.imageUrl);
-    return File(path).existsSync() ? path : null;
+    return _cachedPath(File(path));
+  }
+
+  String? _cachedPath(File file) {
+    if (!file.existsSync()) return null;
+    if (file.lengthSync() == 0) {
+      file.deleteSync();
+      return null;
+    }
+    return file.path;
   }
 
   /// Returns a local file path for [wallpaper], downloading it via Dio first

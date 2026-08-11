@@ -1,10 +1,9 @@
 import Cocoa
 import FlutterMacOS
-import IOKit.ps
 
 /// Owns the native windowed live-wallpaper player. It keeps one
 /// `WallpaperWindowController` per display, exposes the `com.wallify/live_wallpaper`
-/// method channel, and handles persistence plus battery/sleep/display changes.
+/// method channel, and handles persistence plus sleep/display changes.
 final class LiveWallpaperManager {
   static let shared = LiveWallpaperManager()
   static let channelName = "com.wallify/live_wallpaper"
@@ -16,9 +15,7 @@ final class LiveWallpaperManager {
   private var currentWallpaperId: String?
   private var currentFilePath: String?
 
-  private var isOnBattery = false
   private var isScreenAsleep = false
-  private var powerSourceRunLoopSource: CFRunLoopSource?
   private var observers: [NSObjectProtocol] = []
   private var didStartMonitoring = false
 
@@ -161,7 +158,7 @@ final class LiveWallpaperManager {
     updateSuspendedState()
   }
 
-  // MARK: - Battery / sleep / display monitoring
+  // MARK: - Sleep / display monitoring
 
   private func startMonitoring() {
     let center = NotificationCenter.default
@@ -192,8 +189,6 @@ final class LiveWallpaperManager {
     ) { [weak self] _ in
       self?.screenParametersDidChange()
     })
-
-    startPowerMonitoring()
   }
 
   private func screenParametersDidChange() {
@@ -203,60 +198,11 @@ final class LiveWallpaperManager {
     updateSuspendedState()
   }
 
-  private func startPowerMonitoring() {
-    let callback: IOPowerSourceCallbackType = { context in
-      guard let context = context else { return }
-      let manager = Unmanaged<LiveWallpaperManager>
-        .fromOpaque(context)
-        .takeUnretainedValue()
-      manager.updatePowerState()
-    }
-    let selfPointer = UnsafeMutableRawPointer(
-      Unmanaged.passUnretained(self).toOpaque()
-    )
-    guard
-      let source = IOPSNotificationCreateRunLoopSource(callback, selfPointer)?
-        .takeRetainedValue()
-    else {
-      return
-    }
-    powerSourceRunLoopSource = source
-    CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-    updatePowerState()
-  }
-
-  private func updatePowerState() {
-    isOnBattery = isOnBatteryPower()
-    updateSuspendedState()
-  }
-
-  private func isOnBatteryPower() -> Bool {
-    guard
-      let blob = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
-      let list = IOPSCopyPowerSourcesList(blob)?.takeRetainedValue()
-    else {
-      return false
-    }
-    let sources = list as? [CFTypeRef] ?? []
-    for source in sources {
-      guard
-        let dict = IOPSGetPowerSourceDescription(blob, source)?
-          .takeUnretainedValue()
-      else {
-        continue
-      }
-      let description = dict as NSDictionary
-      if (description[kIOPSPowerSourceStateKey] as? String) == kIOPSBatteryPowerValue as String {
-        return true
-      }
-    }
-    return false
-  }
-
-  /// Pauses playback while on battery power or while the screen is locked/asleep,
-  /// and resumes as soon as both conditions clear.
+  /// Pauses playback while the screen is locked/asleep and resumes on wake.
+  /// The video intentionally keeps playing on battery power so a freshly set
+  /// live wallpaper is never left frozen on a still frame.
   private func updateSuspendedState() {
-    let shouldSuspend = isOnBattery || isScreenAsleep
+    let shouldSuspend = isScreenAsleep
     windowControllers.forEach { controller in
       if shouldSuspend {
         controller.pause()

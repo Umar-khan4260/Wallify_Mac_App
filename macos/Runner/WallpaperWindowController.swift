@@ -45,11 +45,12 @@ final class WallpaperWindowController {
     player = AVQueuePlayer()
     player.isMuted = true
 
-    // kCGDesktopWindowLevel: the same layer macOS draws the wallpaper on, so
-    // the video replaces the background but stays behind desktop icons and all
-    // normal app windows.
+    // kCGDesktopWindowLevel + 1: sits one level above the desktop picture
+    // layer, so the video reliably renders on top of the wallpaper on recent
+    // macOS versions, while desktop icons (kCGDesktopIconWindowLevel, +20) and
+    // all normal windows still stay above it.
     window.level = NSWindow.Level(
-      rawValue: Int(CGWindowLevelForKey(.desktopWindow))
+      rawValue: Int(CGWindowLevelForKey(.desktopWindow)) + 1
     )
     window.collectionBehavior = [
       .canJoinAllSpaces,
@@ -82,7 +83,7 @@ final class WallpaperWindowController {
     looper = AVPlayerLooper(player: player, templateItem: item)
 
     isSuspended = false
-    window.orderFront(nil)
+    window.orderFrontRegardless()
     player.play()
   }
 
