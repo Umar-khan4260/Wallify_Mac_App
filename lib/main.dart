@@ -5,6 +5,7 @@ import 'Provider/SubscriptionProvider.dart';
 import 'data/download_service.dart';
 import 'data/favorites_service.dart';
 import 'data/notification_service.dart';
+import 'data/search_history_service.dart';
 import 'data/wallpaper_service_io.dart';
 import 'screens/main_screen.dart';
 import 'screens/premium/subscription_screen.dart';
@@ -19,6 +20,7 @@ void main() async {
 
   await ThemeController.instance.init();
   await FavoritesService.instance.init();
+  await SearchHistoryService.instance.init();
   await NotificationService.instance.init();
   await _scheduleExpiryReminder(subscriptionProvider);
   await WallpaperFileStore().maybeNotifyCacheWarning();
