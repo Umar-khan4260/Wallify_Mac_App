@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/favorites_service.dart';
 import '../../data/live_wallpaper_service.dart';
 import '../../data/notification_service.dart';
+import '../../data/search_history_service.dart';
 import '../../data/wallpaper_service_io.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/theme_controller.dart';
@@ -75,6 +76,8 @@ class SettingsScreen extends StatelessWidget {
         ),
         const Divider(),
         const _ClearCacheTile(),
+        const Divider(),
+        const _ClearSearchHistoryTile(),
         const Divider(),
         const ListTile(
           contentPadding: EdgeInsets.zero,
@@ -215,6 +218,60 @@ class _ClearCacheTileState extends State<_ClearCacheTile> {
           return const Text('Unavailable');
         }
         return Text(snapshot.data ?? '');
+      },
+    );
+  }
+}
+
+class _ClearSearchHistoryTile extends StatelessWidget {
+  const _ClearSearchHistoryTile();
+
+  Future<void> _confirmClear(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Search History?'),
+        content: const Text(
+          'Your recent searches will be permanently removed from this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await SearchHistoryService.instance.clearHistory();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Search history cleared')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: SearchHistoryService.instance.listenable,
+      builder: (context, history, _) {
+        final count = history.length;
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.manage_search_outlined),
+          title: const Text('Clear Search History'),
+          subtitle: Text(
+            count == 0
+                ? 'No recent searches'
+                : '$count recent ${count == 1 ? 'search' : 'searches'}',
+          ),
+          enabled: count > 0,
+          onTap: () => _confirmClear(context),
+        );
       },
     );
   }
