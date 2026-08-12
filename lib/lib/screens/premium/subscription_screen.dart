@@ -82,8 +82,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     _showLoadingDialog('Processing your purchase…');
 
     try {
-      // Using mockPurchase for local testing without Xcode
-      await provider.mockPurchase(productId);
+      await provider.purchaseSubscription(productId);
 
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
@@ -554,7 +553,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         ),
         child: const Text(
           'Continue',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white ),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
