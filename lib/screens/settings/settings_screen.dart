@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/favorites_service.dart';
 import '../../data/live_wallpaper_service.dart';
+import '../../data/notification_service.dart';
 import '../../data/wallpaper_service_io.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/theme_controller.dart';
@@ -46,6 +47,21 @@ class SettingsScreen extends StatelessWidget {
                     (!value && mode == ThemeMode.dark)) {
                   ThemeController.instance.toggleTheme();
                 }
+              },
+            );
+          },
+        ),
+        const Divider(),
+        ValueListenableBuilder<bool>(
+          valueListenable: NotificationService.instance.enabledNotifier,
+          builder: (context, enabled, _) {
+            return SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Notifications'),
+              subtitle: const Text('Alerts for downloads and subscription'),
+              value: enabled,
+              onChanged: (value) {
+                NotificationService.instance.setEnabled(value);
               },
             );
           },

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'notification_service.dart';
+
 /// MethodChannel name shared with the native macOS side
 /// (`macos/Runner/LiveWallpaperManager.swift`).
 const String kLiveWallpaperChannel = 'com.wallify/live_wallpaper';
@@ -23,6 +25,12 @@ class LiveWallpaperService {
       'filePath': localFilePath,
       'wallpaperId': wallpaperId,
     });
+    if (ok == true) {
+      NotificationService.instance.show(
+        'Live wallpaper set',
+        'Your new live wallpaper is now playing on the desktop',
+      );
+    }
     return ok ?? false;
   }
 
