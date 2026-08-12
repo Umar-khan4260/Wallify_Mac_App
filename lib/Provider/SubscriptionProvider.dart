@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/notification_service.dart';
+
 /// Owns the three auto-renewing subscription plans and the premium
 /// entitlement, talking to the store through Flutter's official
 /// `in_app_purchase` plugin (StoreKit on iOS/macOS, Play Billing on Android).
@@ -380,6 +382,20 @@ class SubscriptionProvider extends ChangeNotifier {
           _notify();
           break;
         case PurchaseStatus.purchased:
+          debugPrint(
+            'SubscriptionProvider: ${purchase.status} for ${purchase.productID}',
+          );
+          await _grantEntitlement(purchase);
+          await _completePurchaseIfNeeded(purchase);
+          _isPurchasing = false;
+          _notify();
+          // Celebrate only brand-new purchases — a restored entitlement was
+          // already owned (and presumably celebrated) before.
+          NotificationService.instance.show(
+            'Welcome to Premium!',
+            'Enjoy all wallpapers',
+          );
+          break;
         case PurchaseStatus.restored:
           debugPrint(
             'SubscriptionProvider: ${purchase.status} for ${purchase.productID}',

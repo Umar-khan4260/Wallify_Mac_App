@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/wallpaper.dart';
+import 'notification_service.dart';
 
 /// Downloads and caches wallpaper files on the filesystem.
 ///
@@ -94,7 +95,14 @@ class WallpaperFileStore {
     final existing = await localFileFor(wallpaper);
     if (existing != null) return existing;
     final finalPath = await _pathFor(wallpaper, wallpaper.mediaUrl);
-    return _downloadTo(wallpaper.mediaUrl, finalPath, onProgress: onProgress);
+    final path = await _downloadTo(
+      wallpaper.mediaUrl,
+      finalPath,
+      onProgress: onProgress,
+    );
+    NotificationService.instance.show('Download complete', wallpaper.title);
+    maybeNotifyCacheWarning();
+    return path;
   }
 
   /// Downloads the still thumbnail of a live (video) wallpaper so it can be
@@ -160,6 +168,31 @@ class WallpaperFileStore {
       }
     }
     return total;
+  }
+
+  static const int _cacheWarningThresholdBytes = 500 * 1024 * 1024;
+
+  /// In-memory session flag: the cache warning fires at most once per app
+  /// session regardless of how many times the check runs.
+  static bool _cacheWarningShownThisSession = false;
+
+  /// Alerts the user when the wallpaper cache exceeds 500 MB. Safe to call on
+  /// app launch and after each download; the session flag above stops repeat
+  /// alerts. Never throws.
+  Future<void> maybeNotifyCacheWarning() async {
+    if (_cacheWarningShownThisSession) return;
+    try {
+      final size = await cacheSizeBytes();
+      if (size > _cacheWarningThresholdBytes) {
+        _cacheWarningShownThisSession = true;
+        NotificationService.instance.show(
+          'Cache is getting large',
+          'Clear it in Settings to free up space',
+        );
+      }
+    } catch (e) {
+      debugPrint('WallpaperFileStore.maybeNotifyCacheWarning failed: $e');
+    }
   }
 
   /// Deletes every file in the wallpapers cache directory except those whose
