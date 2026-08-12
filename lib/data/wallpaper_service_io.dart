@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../models/wallpaper.dart';
@@ -25,13 +26,18 @@ class WallpaperFileStore {
   /// Only macOS currently has a native "setWallpaper" handler.
   bool get isSupported => Platform.isMacOS;
 
-  Future<String> _cacheDirectory() async {
+  Future<String> _cacheDirPath() async {
     final base = await getApplicationSupportDirectory();
-    final dir = Directory('${base.path}/$_cacheDirName');
+    return '${base.path}/$_cacheDirName';
+  }
+
+  Future<String> _cacheDirectory() async {
+    final path = await _cacheDirPath();
+    final dir = Directory(path);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
-    return dir.path;
+    return path;
   }
 
   /// File extension taken from a URL (e.g. `.jpg`), falling back to `.jpg`
@@ -138,5 +144,57 @@ class WallpaperFileStore {
       }
       rethrow;
     }
+  }
+
+  /// Total size in bytes of every file in the wallpapers cache directory.
+  Future<int> cacheSizeBytes() async {
+    final dir = Directory(await _cacheDirectory());
+    var total = 0;
+    await for (final entity in dir.list(followLinks: false)) {
+      if (entity is File) {
+        try {
+          total += await entity.length();
+        } catch (_) {
+          // The file may have been removed/replaced by an in-flight download.
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Deletes every file in the wallpapers cache directory except those whose
+  /// wallpaper id (the filename before the extension) is in [excludeIds].
+  ///
+  /// Skips subdirectories and does nothing (without throwing) when the cache
+  /// directory does not exist yet. A file that fails to delete (e.g. locked by
+  /// the live-wallpaper player) is logged and skipped so the rest still clears.
+  /// Returns the number of files that could not be deleted.
+  Future<int> clearCache({Set<String> excludeIds = const {}}) async {
+    final dir = Directory(await _cacheDirPath());
+    if (!await dir.exists()) return 0;
+
+    var failed = 0;
+    await for (final entity in dir.list(followLinks: false)) {
+      if (entity is! File) continue;
+      final name = entity.uri.pathSegments.last;
+      final dot = name.lastIndexOf('.');
+      final id = dot == -1 ? name : name.substring(0, dot);
+      if (excludeIds.contains(id)) continue;
+      try {
+        await entity.delete();
+      } catch (e) {
+        failed++;
+        debugPrint(
+          'WallpaperFileStore.clearCache: could not delete '
+          '${entity.path}: $e',
+        );
+      }
+    }
+    if (failed > 0) {
+      debugPrint(
+        'WallpaperFileStore.clearCache: $failed file(s) could not be cleared.',
+      );
+    }
+    return failed;
   }
 }
