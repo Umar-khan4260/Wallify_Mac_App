@@ -4,7 +4,7 @@ import FlutterMacOS
 @main
 class AppDelegate: FlutterAppDelegate {
   /// Must match `kWallpaperMethodChannel` in
-  /// lib/lib/data/wallpaper_service.dart.
+  /// lib/data/wallpaper_service.dart.
   private let wallpaperChannelName = "com.myapp/wallpaper"
 
   override func applicationDidFinishLaunching(_ notification: Notification) {
