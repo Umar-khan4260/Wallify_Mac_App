@@ -8,8 +8,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:wallify/lib/data/wallpaper_service.dart';
-import 'package:wallify/lib/models/wallpaper.dart';
+import 'package:wallify/data/wallpaper_service.dart';
+import 'package:wallify/models/wallpaper.dart';
 
 const _wallpaper = Wallpaper(
   id: '42',
