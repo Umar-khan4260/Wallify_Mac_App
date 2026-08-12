@@ -10,6 +10,20 @@ import '../../widgets/wallpaper_card.dart';
 import 'widgets/category_grid.dart';
 import 'widgets/filters_row.dart';
 
+enum SortOption {
+  recent('Recent', 'recent', 'all'),
+  featured('Featured', 'featured', 'all'),
+  popular('Popular', 'popular', 'all'),
+  random('Random', 'random', 'all'),
+  liveWallpaper('Live Wallpaper', 'recent', 'live');
+
+  final String label;
+  final String order;
+  final String filter;
+
+  const SortOption(this.label, this.order, this.filter);
+}
+
 class CategoriesScreen extends StatefulWidget {
   final int? initialCategoryId;
 
@@ -21,6 +35,8 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   int _selectedFilter = 0; // 0 = All, >0 = Specific Category
+  int? _selectedCategoryId;
+  SortOption _selectedSortOption = SortOption.recent;
 
   final _categoryRepository = CategoryRepository();
   final _wallpaperRepository = WallpaperRepository();
@@ -52,12 +68,21 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         if (index != -1) {
           setState(() {
             _selectedFilter = index + 1; // +1 because 0 is 'All'
-            _wallpapersFuture = _wallpaperRepository.getWallpapers(
-              categoryId: widget.initialCategoryId!,
-            );
+            _selectedCategoryId = widget.initialCategoryId;
+            _fetchWallpapers();
           });
         }
       });
+    }
+  }
+
+  void _fetchWallpapers() {
+    if (_selectedCategoryId != null) {
+      _wallpapersFuture = _wallpaperRepository.getWallpapers(
+        categoryId: _selectedCategoryId!,
+        order: _selectedSortOption.order,
+        filter: _selectedSortOption.filter,
+      );
     }
   }
 
@@ -65,13 +90,66 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     setState(() {
       _categoriesFuture = _categoryRepository.getCategories();
       if (_selectedFilter > 0) {
-        // We can't easily re-fetch the specific category here without having the category ID,
-        // but since we are refreshing categories, we can just reset to 'All'.
         _selectedFilter = 0;
+        _selectedCategoryId = null;
         _wallpapersFuture = null;
       }
     });
     await _categoriesFuture;
+  }
+
+  void _showSortDialog() {
+    SortOption tempOption = _selectedSortOption;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Sort Wallpapers'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: SortOption.values.map((option) {
+                  return RadioListTile<SortOption>(
+                    title: Text(option.label),
+                    value: option,
+                    groupValue: tempOption,
+                    activeColor: Theme.of(context).colorScheme.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) {
+                      if (value != null) {
+                        setDialogState(() => tempOption = value);
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (_selectedSortOption != tempOption) {
+                      setState(() {
+                        _selectedSortOption = tempOption;
+                        _fetchWallpapers();
+                      });
+                    }
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -104,21 +182,41 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FiltersRow(
-                filters: filters,
-                selectedIndex: _selectedFilter,
-                onSelected: (i) {
-                  setState(() {
-                    _selectedFilter = i;
-                    if (i > 0) {
-                      _wallpapersFuture = _wallpaperRepository.getWallpapers(
-                        categoryId: categories[i - 1].id,
-                      );
-                    } else {
-                      _wallpapersFuture = null;
-                    }
-                  });
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: FiltersRow(
+                      filters: filters,
+                      selectedIndex: _selectedFilter,
+                      onSelected: (i) {
+                        setState(() {
+                          _selectedFilter = i;
+                          if (i > 0) {
+                            _selectedCategoryId = categories[i - 1].id;
+                            _fetchWallpapers();
+                          } else {
+                            _selectedCategoryId = null;
+                            _wallpapersFuture = null;
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  if (_selectedFilter > 0) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.sort_rounded),
+                      tooltip: 'Sort Wallpapers',
+                      onPressed: _showSortDialog,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: AppSpacing.stackLg),
               Expanded(
@@ -150,8 +248,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             final index = categories.indexOf(category) + 1;
                             setState(() {
                               _selectedFilter = index;
-                              _wallpapersFuture = _wallpaperRepository
-                                  .getWallpapers(categoryId: category.id);
+                              _selectedCategoryId = category.id;
+                              _fetchWallpapers();
                             });
                           },
                         ),
