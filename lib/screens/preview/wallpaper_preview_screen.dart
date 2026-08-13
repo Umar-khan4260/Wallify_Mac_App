@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../data/download_service.dart';
 import '../../data/favorites_service.dart';
@@ -26,8 +27,10 @@ class WallpaperPreviewScreen extends StatefulWidget {
 class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
   late List<Wallpaper> _wallpapers;
   late int _index;
+  late final PageController _pageController;
   bool _isSettingWallpaper = false;
   double _setProgress = 0.0;
+  bool _currentPageZoomed = false;
 
   final _favService = FavoritesService.instance;
   final _dlService = DownloadService.instance;
@@ -46,6 +49,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
             ? widget.wallpapers!
             : [widget.wallpaper];
     _index = widget.initialIndex.clamp(0, _wallpapers.length - 1);
+    _pageController = PageController(initialPage: _index);
   }
 
   @override
@@ -57,25 +61,44 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
               ? widget.wallpapers!
               : [widget.wallpaper];
       _index = widget.initialIndex.clamp(0, _wallpapers.length - 1);
+      _pageController.jumpToPage(_index);
     }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int page) {
+    setState(() {
+      _index = page;
+      _setProgress = 0.0;
+      _isSettingWallpaper = false;
+      _currentPageZoomed = false;
+    });
+  }
+
+  void _onZoomChanged(bool zoomed) {
+    if (zoomed == _currentPageZoomed) return;
+    setState(() => _currentPageZoomed = zoomed);
   }
 
   void _goPrev() {
     if (!_canGoPrev) return;
-    setState(() {
-      _index--;
-      _setProgress = 0.0;
-      _isSettingWallpaper = false;
-    });
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _goNext() {
     if (!_canGoNext) return;
-    setState(() {
-      _index++;
-      _setProgress = 0.0;
-      _isSettingWallpaper = false;
-    });
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   bool _hasAccessOrShowPaywall() {
@@ -145,31 +168,45 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Image ─────────────────────────────────────────────────────────
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: InteractiveViewer(
-              key: ValueKey(_current.id),
-              minScale: 1.0,
-              maxScale: 4.0,
-              child: Image.network(
-                _current.imageUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                },
-                errorBuilder: (context, error, stack) => const Center(
-                  child: Icon(
-                    Icons.broken_image,
-                    color: Colors.white54,
-                    size: 64,
-                  ),
+          // ── Image / Video with swipe navigation ────────────────────────
+          PageView.builder(
+            controller: _pageController,
+            itemCount: _wallpapers.length,
+            onPageChanged: _onPageChanged,
+            physics: _currentPageZoomed
+                ? const NeverScrollableScrollPhysics()
+                : const PageScrollPhysics(),
+            itemBuilder: (context, index) {
+              final wallpaper = _wallpapers[index];
+              return _ZoomablePage(
+                key: ValueKey(
+                  '${wallpaper.id}-${wallpaper.isVideo ? 'video' : 'image'}',
                 ),
-              ),
-            ),
+                onZoomChanged: _onZoomChanged,
+                child: wallpaper.isVideo
+                    ? _LoopingVideoPlayer(url: wallpaper.mediaUrl)
+                    : Image.network(
+                        wallpaper.imageUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stack) =>
+                            const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.white54,
+                                size: 64,
+                              ),
+                            ),
+                      ),
+              );
+            },
           ),
 
           // ── Left / Right navigation arrows ────────────────────────────────
@@ -423,6 +460,150 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
           ),
         ),
         child: Icon(icon, color: Colors.white, size: 30),
+      ),
+    );
+  }
+}
+
+/// Plays a looping video (live wallpaper) in the preview.
+class _LoopingVideoPlayer extends StatefulWidget {
+  final String url;
+
+  const _LoopingVideoPlayer({required this.url});
+
+  @override
+  State<_LoopingVideoPlayer> createState() => _LoopingVideoPlayerState();
+}
+
+class _LoopingVideoPlayerState extends State<_LoopingVideoPlayer> {
+  late VideoPlayerController _controller;
+  bool _initialized = false;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initController();
+  }
+
+  void _initController() {
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+    _controller.setLooping(true);
+    _controller.initialize().then((_) {
+      if (!mounted) return;
+      setState(() => _initialized = true);
+      _controller.play();
+    }).catchError((_) {
+      if (!mounted) return;
+      setState(() => _failed = true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _LoopingVideoPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _controller.dispose();
+      _initialized = false;
+      _failed = false;
+      _initController();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed) {
+      return const Center(
+        child: Icon(
+          Icons.videocam_off,
+          color: Colors.white54,
+          size: 64,
+        ),
+      );
+    }
+    if (!_initialized) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    return Center(
+      child: AspectRatio(
+        aspectRatio: _controller.value.aspectRatio,
+        child: VideoPlayer(_controller),
+      ),
+    );
+  }
+}
+
+/// A zoomable page. Zoom gestures are only active once the user has double
+/// tapped (or pinch-zoomed); while at scale 1.0 the page lets the surrounding
+/// [PageView] handle horizontal swipes.
+class _ZoomablePage extends StatefulWidget {
+  final Widget child;
+  final ValueChanged<bool> onZoomChanged;
+
+  const _ZoomablePage({
+    super.key,
+    required this.child,
+    required this.onZoomChanged,
+  });
+
+  @override
+  State<_ZoomablePage> createState() => _ZoomablePageState();
+}
+
+class _ZoomablePageState extends State<_ZoomablePage> {
+  final TransformationController _controller = TransformationController();
+  bool _zoomed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTransformChanged);
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onTransformChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onTransformChanged() {
+    final scale = _controller.value.getMaxScaleOnAxis();
+    final zoomed = scale > 1.001;
+    if (zoomed != _zoomed) {
+      setState(() => _zoomed = zoomed);
+      widget.onZoomChanged(zoomed);
+    }
+  }
+
+  void _handleDoubleTap() {
+    if (_zoomed) {
+      _controller.value = Matrix4.identity();
+    } else {
+      _controller.value = Matrix4.identity()..scaleByDouble(2.0, 2.0, 1.0, 1.0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onDoubleTap: _handleDoubleTap,
+      child: InteractiveViewer(
+        transformationController: _controller,
+        minScale: 1.0,
+        maxScale: 4.0,
+        panEnabled: _zoomed,
+        scaleEnabled: _zoomed,
+        child: widget.child,
       ),
     );
   }
