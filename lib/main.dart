@@ -73,7 +73,7 @@ class WallifyApp extends StatelessWidget {
       valueListenable: themeNotifier,
       builder: (context, currentMode, _) {
         return MaterialApp(
-          title: 'Wallify',
+          title: '4K Live Wallpapers',
           themeMode: currentMode,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
