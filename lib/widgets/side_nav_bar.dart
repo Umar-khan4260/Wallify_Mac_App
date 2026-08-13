@@ -71,7 +71,7 @@ class SideNavBar extends StatelessWidget {
                   Text(
                     '4K Live Wallpapers',
                     style: TextStyle(
-                      fontSize: 19,
+                      fontSize: 17,
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.3,
                       color: Theme.of(context).colorScheme.onSurface,
@@ -104,7 +104,8 @@ class SideNavBar extends StatelessWidget {
           ValueListenableBuilder<ThemeMode>(
             valueListenable: themeNotifier,
             builder: (context, mode, _) {
-              final isDark = mode == ThemeMode.dark ||
+              final isDark =
+                  mode == ThemeMode.dark ||
                   (mode == ThemeMode.system &&
                       MediaQuery.platformBrightnessOf(context) ==
                           Brightness.dark);
@@ -132,7 +133,9 @@ class SideNavBar extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         color: isDark
                             ? AppColors.primary
-                            : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                       ),
                       child: AnimatedAlign(
                         duration: const Duration(milliseconds: 200),
@@ -211,11 +214,11 @@ class _NavItemState extends State<_NavItem> {
               color: active
                   ? AppColors.primary
                   : (_hovering
-                      ? (Theme.of(context).colorScheme.brightness ==
-                              Brightness.dark
-                          ? Colors.white.withOpacity(0.08)
-                          : Colors.black.withOpacity(0.05))
-                      : Colors.transparent),
+                        ? (Theme.of(context).colorScheme.brightness ==
+                                  Brightness.dark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.05))
+                        : Colors.transparent),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Row(
