@@ -301,6 +301,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             itemBuilder: (context, index) {
                               return WallpaperCard(
                                 wallpaper: filteredWallpapers[index],
+                                wallpapers: filteredWallpapers,
+                                index: index,
                               );
                             },
                           );

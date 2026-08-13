@@ -50,7 +50,11 @@ class FavoritesScreen extends StatelessWidget {
                     mainAxisSpacing: AppSpacing.stackMd,
                   ),
                   itemBuilder: (context, index) {
-                    return WallpaperCard(wallpaper: favorites[index]);
+                    return WallpaperCard(
+                      wallpaper: favorites[index],
+                      wallpapers: favorites,
+                      index: index,
+                    );
                   },
                 ),
               ),

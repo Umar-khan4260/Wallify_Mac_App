@@ -52,7 +52,11 @@ class DownloadsScreen extends StatelessWidget {
                     mainAxisSpacing: AppSpacing.stackMd,
                   ),
                   itemBuilder: (context, index) {
-                    return WallpaperCard(wallpaper: downloaded[index]);
+                    return WallpaperCard(
+                      wallpaper: downloaded[index],
+                      wallpapers: downloaded,
+                      index: index,
+                    );
                   },
                 ),
               ),

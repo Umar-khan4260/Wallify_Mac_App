@@ -97,7 +97,11 @@ class _TrendingScreenState extends State<TrendingScreen> {
                           mainAxisSpacing: AppSpacing.stackMd,
                         ),
                     itemBuilder: (context, index) {
-                      return WallpaperCard(wallpaper: trending[index]);
+                      return WallpaperCard(
+                        wallpaper: trending[index],
+                        wallpapers: trending,
+                        index: index,
+                      );
                     },
                   ),
                 );
