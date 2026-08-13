@@ -8,7 +8,7 @@
 PRODUCT_NAME = wallify
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.wallify
+PRODUCT_BUNDLE_IDENTIFIER = com.sunz.macwallapp
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
