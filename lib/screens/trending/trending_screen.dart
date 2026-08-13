@@ -4,6 +4,7 @@ import '../../data/api_constants.dart';
 import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../theme/app_dimens.dart';
+import '../../widgets/network_error_widget.dart';
 import '../../widgets/wallpaper_card.dart';
 
 class TrendingScreen extends StatefulWidget {
@@ -74,21 +75,7 @@ class _TrendingScreenState extends State<TrendingScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Error loading trending wallpapers: ${snapshot.error}',
-                        ),
-                        const SizedBox(height: AppSpacing.stackMd),
-                        OutlinedButton(
-                          onPressed: _refresh,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
+                  return NetworkErrorWidget(onRetry: _refresh);
                 }
 
                 final trending = snapshot.data ?? const [];

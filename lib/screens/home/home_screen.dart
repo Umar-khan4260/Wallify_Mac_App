@@ -6,6 +6,7 @@ import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../models/wallpaper_category.dart';
 import '../../theme/app_dimens.dart';
+import '../../widgets/network_error_widget.dart';
 import '../../widgets/wallpaper_card.dart';
 import 'widgets/featured_banner.dart';
 import 'widgets/quick_categories_row.dart';
@@ -58,24 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('Error loading home data:\n${snapshot.error}'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _homeDataFuture = _fetchHomeData();
-                    });
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
+          return NetworkErrorWidget(
+            onRetry: () {
+              setState(() {
+                _homeDataFuture = _fetchHomeData();
+              });
+            },
           );
         }
 
