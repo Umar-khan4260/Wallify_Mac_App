@@ -8,6 +8,7 @@ import '../data/wallpaper_service.dart';
 import '../models/wallpaper.dart';
 import '../theme/app_dimens.dart';
 import '../utils/premium_helper.dart';
+import '../screens/preview/wallpaper_preview_screen.dart';
 
 /// Shows one wallpaper thumbnail with its title/resolution and toggleable
 /// favorite heart + download button. Distinct from `CategoryCard`
@@ -15,8 +16,16 @@ import '../utils/premium_helper.dart';
 class WallpaperCard extends StatefulWidget {
   final Wallpaper wallpaper;
   final VoidCallback? onTap;
+  final List<Wallpaper>? wallpapers;
+  final int index;
 
-  const WallpaperCard({super.key, required this.wallpaper, this.onTap});
+  const WallpaperCard({
+    super.key,
+    required this.wallpaper,
+    this.onTap,
+    this.wallpapers,
+    this.index = 0,
+  });
 
   @override
   State<WallpaperCard> createState() => _WallpaperCardState();
@@ -71,8 +80,12 @@ class _WallpaperCardState extends State<WallpaperCard> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(result.success ? 'Wallpaper applied!' : result.message),
-            backgroundColor: result.success ? Colors.green.shade700 : errorColor,
+            content: Text(
+              result.success ? 'Wallpaper applied!' : result.message,
+            ),
+            backgroundColor: result.success
+                ? Colors.green.shade700
+                : errorColor,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
           ),
@@ -95,7 +108,20 @@ class _WallpaperCardState extends State<WallpaperCard> {
       onEnter: (_) => setState(() => _hovering = true),
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTap:
+            widget.onTap ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WallpaperPreviewScreen(
+                    wallpaper: widget.wallpaper,
+                    wallpapers: widget.wallpapers,
+                    initialIndex: widget.index,
+                  ),
+                ),
+              );
+            },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
@@ -105,7 +131,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
             boxShadow: _hovering
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
                     ),
@@ -172,7 +198,9 @@ class _WallpaperCardState extends State<WallpaperCard> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.deepPurpleAccent.withOpacity(0.85),
+                            color: Colors.deepPurpleAccent.withValues(
+                              alpha: 0.85,
+                            ),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: const Row(
@@ -202,7 +230,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.45),
+                          color: Colors.black.withValues(alpha: 0.45),
                           borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Text(
@@ -223,7 +251,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.45),
+                            color: Colors.black.withValues(alpha: 0.45),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: const Row(
@@ -282,7 +310,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.45),
+                                    color: Colors.black.withValues(alpha: 0.45),
                                     shape: BoxShape.circle,
                                   ),
                                   child: isInProgress
@@ -323,7 +351,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.45),
+                                color: Colors.black.withValues(alpha: 0.45),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -363,7 +391,7 @@ class _WallpaperCardState extends State<WallpaperCard> {
                         widget.wallpaper.category,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                       AnimatedContainer(

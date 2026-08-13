@@ -105,7 +105,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               mainAxisSpacing: AppSpacing.stackMd,
                             ),
                         itemBuilder: (context, index) {
-                          return WallpaperCard(wallpaper: filtered[index]);
+                          return WallpaperCard(
+                            wallpaper: filtered[index],
+                            wallpapers: filtered,
+                            index: index,
+                          );
                         },
                       );
                     },
