@@ -6,6 +6,7 @@ import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../models/wallpaper_category.dart';
 import '../../theme/app_dimens.dart';
+import '../../widgets/network_error_widget.dart';
 import '../../widgets/wallpaper_card.dart';
 import 'widgets/category_grid.dart';
 import 'widgets/filters_row.dart';
@@ -169,7 +170,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           }
 
           if (snapshot.hasError) {
-            return _ErrorState(message: '${snapshot.error}', onRetry: _refresh);
+            return NetworkErrorWidget(onRetry: _refresh);
           }
 
           final categories = snapshot.data ?? const [];
@@ -265,10 +266,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                             );
                           }
                           if (wallpaperSnapshot.hasError) {
-                            return Center(
-                              child: Text(
-                                'Error loading wallpapers: ${wallpaperSnapshot.error}',
-                              ),
+                            return NetworkErrorWidget(
+                              onRetry: () => setState(_fetchWallpapers),
                             );
                           }
                           final wallpapers = wallpaperSnapshot.data ?? const [];
