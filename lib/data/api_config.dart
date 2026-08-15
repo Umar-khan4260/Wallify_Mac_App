@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ApiConfig {
   ApiConfig._();
 
-  static const String _rawBaseUrl = 'https://nature-new.sunztech.com/api/v1/';
+  static const String _rawBaseUrl = 'https://macwall.sunztech.com/api/v1/';
   static const String _proxyPrefix = 'https://proxy.cors.sh/';
 
   /// Base URL for JSON API calls. On Web, routed through a CORS proxy.
@@ -14,21 +14,21 @@ class ApiConfig {
 
   /// Images fetched by Flutter Web (CanvasKit) use XHR and require CORS.
   static const String _rawCategoryImageBaseUrl =
-      'https://nature-new.sunztech.com/upload/category/';
+      'https://macwall.sunztech.com/upload/category/';
   static String get categoryImageBaseUrl => kIsWeb
       ? '$_proxyPrefix$_rawCategoryImageBaseUrl'
       : _rawCategoryImageBaseUrl;
 
   /// Full-resolution wallpaper images.
   static const String _rawWallpaperImageBaseUrl =
-      'https://nature-new.sunztech.com/upload/';
+      'https://macwall.sunztech.com/upload/';
   static String get wallpaperImageBaseUrl => kIsWeb
       ? '$_proxyPrefix$_rawWallpaperImageBaseUrl'
       : _rawWallpaperImageBaseUrl;
 
   /// Thumbnail/preview images for video (live) wallpapers.
   static const String _rawThumbImageBaseUrl =
-      'https://nature-new.sunztech.com/upload/thumbs/';
+      'https://macwall.sunztech.com/upload/thumbs/';
   static String get thumbImageBaseUrl =>
       kIsWeb ? '$_proxyPrefix$_rawThumbImageBaseUrl' : _rawThumbImageBaseUrl;
 
