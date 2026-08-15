@@ -360,10 +360,8 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                           : ElevatedButton(
                               onPressed: _handleSetWallpaper,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(
-                                  0xFFB3C5FF,
-                                ), // Light blue from screenshot
-                                foregroundColor: Colors.blueAccent.shade700,
+                                backgroundColor: const Color.fromARGB(255, 255, 255, 255), // Light blue from screenshot
+                                foregroundColor: const Color.fromARGB(255, 0, 0, 0),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(28),
