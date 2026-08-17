@@ -6,8 +6,8 @@ import '../models/wallpaper.dart';
 /// Singleton that persists favourited wallpapers in SharedPreferences.
 ///
 /// Stores the minimal data needed to reconstruct a [Wallpaper] object:
-///   key  → "fav_<id>"
-///   value → "title|||category|||resolution|||rawImage"
+///   key  → `fav_<id>`
+///   value → "title|||category|||resolution|||rawImage|||isVideo|||rawThumb"
 ///
 /// [listenable] fires whenever the set of favourites changes, so any widget
 /// that listens to it will rebuild automatically.
@@ -52,7 +52,7 @@ class FavoritesService {
   Future<void> _add(Wallpaper wallpaper) async {
     await _prefs.setString(
       _key(wallpaper.id),
-      '${wallpaper.title}|||${wallpaper.category}|||${wallpaper.resolution}|||${wallpaper.rawImage}',
+      '${wallpaper.title}|||${wallpaper.category}|||${wallpaper.resolution}|||${wallpaper.rawImage}|||${wallpaper.isVideo}|||${wallpaper.rawThumb}',
     );
   }
 
@@ -66,7 +66,7 @@ class FavoritesService {
     for (final key in keys) {
       final raw = _prefs.getString(key) ?? '';
       final parts = raw.split('|||');
-      if (parts.length == 4) {
+      if (parts.length >= 4) {
         final id = key.substring(_prefix.length);
         list.add(
           Wallpaper(
@@ -75,6 +75,8 @@ class FavoritesService {
             category: parts[1],
             resolution: parts[2],
             imageUrl: parts[3],
+            thumbUrl: parts.length >= 6 ? parts[5] : '',
+            isVideo: parts.length >= 5 ? parts[4] == 'true' : false,
           ),
         );
       }
