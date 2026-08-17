@@ -18,7 +18,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.marginEdge),
+      padding: const EdgeInsets.only(left: AppSpacing.marginEdge),
+
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -40,13 +41,12 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.stackLg),
-          Flexible(
+          Expanded(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 288),
               child: SearchField(hintText: 'Search $title...'),
             ),
           ),
-          const Spacer(),
 
           // ── PRO badge / Go Pro button ─────────────────────────────────
           Consumer<SubscriptionProvider>(
@@ -91,7 +91,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                 return GestureDetector(
                   onTap: () => SubscriptionScreen.show(context),
                   child: Container(
-                    margin: const EdgeInsets.only(right: 8),
+                    margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -133,14 +133,19 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             valueListenable: themeNotifier,
             builder: (context, mode, child) {
               final isDark = mode == ThemeMode.dark;
-              return IconButton(
-                icon: Icon(
-                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                onPressed: () {
+              return GestureDetector(
+                onTap: () {
                   ThemeController.instance.toggleTheme();
                 },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 48),
+                  child: Icon(
+                    isDark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               );
             },
           ),

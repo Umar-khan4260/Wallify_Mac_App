@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
@@ -161,6 +163,71 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
     );
   }
 
+  void _showInfoDialog() {
+    final wallpaper = _current;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.grey.shade900,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Wallpaper Info',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildInfoRow('Name', wallpaper.title),
+              _buildInfoRow('Resolution', wallpaper.resolution),
+              _buildInfoRow('Category', wallpaper.category),
+              _buildInfoRow(
+                'Type',
+                wallpaper.isVideo ? 'Live Wallpaper' : 'Image',
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Colors.blueAccent),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white70),
+          ),
+          Text(
+            value.isEmpty ? 'Unknown' : value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,24 +314,25 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                   icon: Icons.arrow_back,
                   onTap: () => Navigator.pop(context),
                 ),
-                const Text(
-                  'Wallpaper Preview',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                ValueListenableBuilder<List<Wallpaper>>(
-                  valueListenable: _favService.listenable,
-                  builder: (context, _, __) {
-                    final isFav = _favService.isFavorite(_current.id);
-                    return _buildCircleButton(
-                      icon: isFav ? Icons.favorite : Icons.favorite_border,
-                      iconColor: isFav ? Colors.redAccent : Colors.white,
-                      onTap: () => _favService.toggleFavorite(_current),
-                    );
-                  },
+                Row(
+                  children: [
+                    _buildCircleButton(
+                      icon: Icons.info_outline,
+                      onTap: _showInfoDialog,
+                    ),
+                    const SizedBox(width: 12),
+                    ValueListenableBuilder<List<Wallpaper>>(
+                      valueListenable: _favService.listenable,
+                      builder: (context, _, __) {
+                        final isFav = _favService.isFavorite(_current.id);
+                        return _buildCircleButton(
+                          icon: isFav ? Icons.favorite : Icons.favorite_border,
+                          iconColor: isFav ? Colors.redAccent : Colors.white,
+                          onTap: () => _favService.toggleFavorite(_current),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -316,9 +384,9 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                     const SizedBox(width: 12),
 
                     // Set as Wallpaper Button
-                    Expanded(
-                      child: SizedBox(
-                        height: 56,
+                    SizedBox(
+                      width: 250,
+                      height: 48,
                         child: _isSettingWallpaper
                           ? Container(
                               padding: const EdgeInsets.symmetric(
@@ -357,32 +425,55 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                                 ],
                               ),
                             )
-                          : ElevatedButton(
-                              onPressed: _handleSetWallpaper,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromARGB(255, 255, 255, 255), // Light blue from screenshot
-                                foregroundColor: const Color.fromARGB(255, 0, 0, 0),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
+: ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
                                 ),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.wallpaper, size: 20),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'SET AS WALLPAPER',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
+                                child: GestureDetector(
+                                  onTap: _handleSetWallpaper,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius:
+                                          BorderRadius.circular(28),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.wallpaper,
+                                          size: 20,
+                                          color: Colors.white,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'SET AS WALLPAPER',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                      ),
                     ),
                     const SizedBox(width: 12),
 
@@ -392,15 +483,6 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                       onTap: _handleShare,
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${_current.resolution} • ${_current.category}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
               ],
             ),

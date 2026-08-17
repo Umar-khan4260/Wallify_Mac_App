@@ -40,6 +40,9 @@ class Wallpaper {
   /// The raw filename stored by FavoritesService.
   String get rawImage => _rawImage;
 
+  /// The raw thumbnail filename (for video wallpapers).
+  String get rawThumb => _rawThumb;
+
   const Wallpaper({
     required this.id,
     required this.title,

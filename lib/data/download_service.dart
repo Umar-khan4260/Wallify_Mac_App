@@ -114,7 +114,7 @@ class DownloadService {
   Future<void> _add(Wallpaper wallpaper) async {
     await _prefs.setString(
       _key(wallpaper.id),
-      '${wallpaper.title}|||${wallpaper.category}|||${wallpaper.resolution}|||${wallpaper.rawImage}',
+      '${wallpaper.title}|||${wallpaper.category}|||${wallpaper.resolution}|||${wallpaper.rawImage}|||${wallpaper.isVideo}|||${wallpaper.rawThumb}',
     );
   }
 
@@ -128,7 +128,7 @@ class DownloadService {
     for (final key in keys) {
       final raw = _prefs.getString(key) ?? '';
       final parts = raw.split('|||');
-      if (parts.length == 4) {
+      if (parts.length >= 4) {
         final id = key.substring(_prefix.length);
         list.add(
           Wallpaper(
@@ -137,6 +137,8 @@ class DownloadService {
             category: parts[1],
             resolution: parts[2],
             imageUrl: parts[3],
+            thumbUrl: parts.length >= 6 ? parts[5] : '',
+            isVideo: parts.length >= 5 ? parts[4] == 'true' : false,
           ),
         );
       }
