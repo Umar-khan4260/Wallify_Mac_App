@@ -158,6 +158,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
   }
 
   void _handleShare() {
+    if (!_hasAccessOrShowPaywall()) return;
     Share.share(
       'Check out this awesome wallpaper from Wallify!\n${_current.imageUrl}',
     );
