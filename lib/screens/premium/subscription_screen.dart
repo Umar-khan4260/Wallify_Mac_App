@@ -205,13 +205,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             children: [
               // ── blurred background ──────────────────────────────
               Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.4),
-                    ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
                   ),
                 ),
               ),
@@ -224,30 +221,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     scale: _scaleAnimation,
                     child: GestureDetector(
                       onTap: () {}, // Prevent tap from closing modal
-                      child: Container(
-                        width: 680,
-                        constraints: const BoxConstraints(maxHeight: 820),
-                        margin: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(28),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 40,
-                              offset: const Offset(0, 20),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // ── top bar: title area + restore button ──────────
-                            _buildTopBar(provider, primary, colorScheme),
+                      child: FittedBox(
+                        // Shrinks the card to fit the screen so no scrolling is
+                        // ever needed (scaleDown never enlarges it).
+                        fit: BoxFit.scaleDown,
+                        child: Container(
+                          width: 680,
+                          constraints: const BoxConstraints(maxHeight: 820),
+                          margin: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surface,
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.18),
+                                blurRadius: 40,
+                                offset: const Offset(0, 20),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // ── top bar: title area + restore button ────────
+                              _buildTopBar(provider, primary, colorScheme),
 
-                            // ── scrollable body ───────────────────────────────
-                            Flexible(
-                              child: SingleChildScrollView(
+                              // ── body ─────────────────────────────────────────
+                              Padding(
                                 padding: const EdgeInsets.fromLTRB(
                                   36,
                                   0,
@@ -281,8 +281,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
