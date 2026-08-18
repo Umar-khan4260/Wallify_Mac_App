@@ -323,7 +323,7 @@ class SubscriptionProvider extends ChangeNotifier {
     return '\$${value.toStringAsFixed(2)}';
   }
 
-  /// "Save X%" for the yearly plan vs 12 × the monthly price, computed from
+  /// "Save X%" for the yearly plan vs 52 × the weekly price, computed from
   /// the store's numeric [ProductDetails.rawPrice] (locale-independent) or the
   /// [fallbackPrices] when store products aren't loaded. Returns null when
   /// there is no saving or prices are unavailable.
@@ -333,13 +333,13 @@ class SubscriptionProvider extends ChangeNotifier {
   /// price strings (parsing "$4.99"-style strings across locales is fragile).
   String? getSavingsAmount() {
     final yearly = _productFor(yearlyProductId);
-    final monthly = _productFor(monthlyProductId);
+    final weekly = _productFor(weeklyProductId);
     final yearlyPrice = yearly?.rawPrice ?? fallbackPrices[yearlyProductId];
-    final monthlyPrice = monthly?.rawPrice ?? fallbackPrices[monthlyProductId];
-    if (yearlyPrice == null || monthlyPrice == null) return null;
-    final monthlyTotal = monthlyPrice * 12;
-    if (monthlyTotal <= 0 || yearlyPrice <= 0) return null;
-    final percent = ((monthlyTotal - yearlyPrice) / monthlyTotal * 100).round();
+    final weeklyPrice = weekly?.rawPrice ?? fallbackPrices[weeklyProductId];
+    if (yearlyPrice == null || weeklyPrice == null) return null;
+    final weeklyTotal = weeklyPrice * 52;
+    if (weeklyTotal <= 0 || yearlyPrice <= 0) return null;
+    final percent = ((weeklyTotal - yearlyPrice) / weeklyTotal * 100).round();
     if (percent <= 0) return null;
     return 'Save $percent%';
   }

@@ -38,7 +38,8 @@ class ApiConfig {
   /// fragility warning). If you know the real numeric id of the "Premium"
   /// category in `get_categories`, set [premiumCategoryId] so the app can
   /// prefer an id match and stop relying on the name.
-  static const String premiumCategoryName = 'Premium';
+  static const String premiumCategoryName = 'HD Wallpapers';
+  // static const String premiumCategoryName = 'Premium';
 
   /// Numeric id of the paid category from `get_categories`. 0 means "unknown"
   /// — the app then falls back to matching [premiumCategoryName] by name.
