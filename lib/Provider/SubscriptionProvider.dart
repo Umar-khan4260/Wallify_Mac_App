@@ -11,8 +11,8 @@ import '../data/notification_service.dart';
 /// `in_app_purchase` plugin (StoreKit on iOS/macOS, Play Billing on Android).
 ///
 /// Plans (auto-renewing subscriptions only — no one-time / lifetime option):
-///   - [weeklyProductId]   "premium_weekly"
-///   - [monthlyProductId]  "premium_monthly"
+///   - [weeklyProductId]   "precom.macwallapp.kly"
+///   - [monthlyProductId]  "prcom.macwallapp.nthly"
 ///   - [yearlyProductId]   "premium_yearly"
 ///
 /// ## No-backend limitation (read this before relying on expiry)
@@ -74,9 +74,9 @@ class SubscriptionProvider extends ChangeNotifier {
   static SubscriptionProvider? instance;
 
   // ── Product identifiers ───────────────────────────────────────────────────
-  static const String weeklyProductId = 'premium_weekly';
-  static const String monthlyProductId = 'premium_monthly';
-  static const String yearlyProductId = 'premium_yearly';
+  static const String weeklyProductId = 'com.macwallapp.weekly';
+  static const String monthlyProductId = 'com.macwallapp.monthly';
+  static const String yearlyProductId = 'com.macwallapp.yearly';
 
   static const List<String> productIds = [
     weeklyProductId,
@@ -91,9 +91,9 @@ class SubscriptionProvider extends ChangeNotifier {
   // prices always override these once ProductDetails arrive. Display-only:
   // purchases always go through the store's ProductDetails.
   static const Map<String, double> fallbackPrices = {
-    weeklyProductId: 5.0,
-    monthlyProductId: 20.0,
-    yearlyProductId: 100.0,
+    weeklyProductId: 2.99,
+    monthlyProductId: 9.99,
+    yearlyProductId: 49.99,
   };
 
   // ── SharedPreferences keys (read-through entitlement cache) ───────────────
