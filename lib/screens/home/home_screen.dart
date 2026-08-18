@@ -86,12 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FeaturedBanner(
-                wallpaper: featuredWallpaper,
-                onSetWallpaper: () {
-                  // TODO: hook up to platform wallpaper-setting code.
-                },
-              ),
+              FeaturedBanner(wallpaper: featuredWallpaper),
               const SizedBox(height: AppSpacing.stackLg),
               Text('Popular Categories', style: sectionTitleStyle),
               const SizedBox(height: AppSpacing.stackMd),

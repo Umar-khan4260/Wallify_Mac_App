@@ -46,10 +46,9 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
   @override
   void initState() {
     super.initState();
-    _wallpapers =
-        (widget.wallpapers != null && widget.wallpapers!.isNotEmpty)
-            ? widget.wallpapers!
-            : [widget.wallpaper];
+    _wallpapers = (widget.wallpapers != null && widget.wallpapers!.isNotEmpty)
+        ? widget.wallpapers!
+        : [widget.wallpaper];
     _index = widget.initialIndex.clamp(0, _wallpapers.length - 1);
     _pageController = PageController(initialPage: _index);
   }
@@ -58,10 +57,9 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
   void didUpdateWidget(covariant WallpaperPreviewScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.wallpapers != oldWidget.wallpapers) {
-      _wallpapers =
-          (widget.wallpapers != null && widget.wallpapers!.isNotEmpty)
-              ? widget.wallpapers!
-              : [widget.wallpaper];
+      _wallpapers = (widget.wallpapers != null && widget.wallpapers!.isNotEmpty)
+          ? widget.wallpapers!
+          : [widget.wallpaper];
       _index = widget.initialIndex.clamp(0, _wallpapers.length - 1);
       _pageController.jumpToPage(_index);
     }
@@ -176,10 +174,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
           ),
           title: const Text(
             'Wallpaper Info',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -213,10 +208,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70),
-          ),
+          Text(label, style: const TextStyle(color: Colors.white70)),
           Text(
             value.isEmpty ? 'Unknown' : value,
             style: const TextStyle(
@@ -264,14 +256,13 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                             ),
                           );
                         },
-                        errorBuilder: (context, error, stack) =>
-                            const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                color: Colors.white54,
-                                size: 64,
-                              ),
-                            ),
+                        errorBuilder: (context, error, stack) => const Center(
+                          child: Icon(
+                            Icons.broken_image,
+                            color: Colors.white54,
+                            size: 64,
+                          ),
+                        ),
                       ),
               );
             },
@@ -284,10 +275,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
               top: 0,
               bottom: 0,
               child: Center(
-                child: _buildNavArrow(
-                  icon: Icons.chevron_left,
-                  onTap: _goPrev,
-                ),
+                child: _buildNavArrow(icon: Icons.chevron_left, onTap: _goPrev),
               ),
             ),
           if (_canGoNext)
@@ -357,9 +345,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                         return ValueListenableBuilder<List<Wallpaper>>(
                           valueListenable: _dlService.listenable,
                           builder: (context, _, __) {
-                            final isDone = _dlService.isDownloaded(
-                              _current.id,
-                            );
+                            final isDone = _dlService.isDownloaded(_current.id);
                             final isInProgress = _dlService.isDownloading(
                               _current.id,
                             );
@@ -388,7 +374,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                     SizedBox(
                       width: 250,
                       height: 48,
-                        child: _isSettingWallpaper
+                      child: _isSettingWallpaper
                           ? Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -426,7 +412,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                                 ],
                               ),
                             )
-: ClipRRect(
+                          : ClipRRect(
                               borderRadius: BorderRadius.circular(28),
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(
@@ -443,8 +429,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                                       color: Colors.white.withValues(
                                         alpha: 0.15,
                                       ),
-                                      borderRadius:
-                                          BorderRadius.circular(28),
+                                      borderRadius: BorderRadius.circular(28),
                                       border: Border.all(
                                         color: Colors.white.withValues(
                                           alpha: 0.3,
@@ -455,11 +440,11 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
-                                          Icons.wallpaper,
-                                          size: 20,
-                                          color: Colors.white,
-                                        ),
+                                        // Icon(
+                                        //   Icons.wallpaper,
+                                        //   size: 20,
+                                        //   color: Colors.white,
+                                        // ),
                                         SizedBox(width: 8),
                                         Text(
                                           'SET AS WALLPAPER',
@@ -524,10 +509,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
     );
   }
 
-  Widget _buildNavArrow({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildNavArrow({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -536,9 +518,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
         ),
         child: Icon(icon, color: Colors.white, size: 30),
       ),
@@ -570,14 +550,17 @@ class _LoopingVideoPlayerState extends State<_LoopingVideoPlayer> {
   void _initController() {
     _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
     _controller.setLooping(true);
-    _controller.initialize().then((_) {
-      if (!mounted) return;
-      setState(() => _initialized = true);
-      _controller.play();
-    }).catchError((_) {
-      if (!mounted) return;
-      setState(() => _failed = true);
-    });
+    _controller
+        .initialize()
+        .then((_) {
+          if (!mounted) return;
+          setState(() => _initialized = true);
+          _controller.play();
+        })
+        .catchError((_) {
+          if (!mounted) return;
+          setState(() => _failed = true);
+        });
   }
 
   @override
@@ -601,11 +584,7 @@ class _LoopingVideoPlayerState extends State<_LoopingVideoPlayer> {
   Widget build(BuildContext context) {
     if (_failed) {
       return const Center(
-        child: Icon(
-          Icons.videocam_off,
-          color: Colors.white54,
-          size: 64,
-        ),
+        child: Icon(Icons.videocam_off, color: Colors.white54, size: 64),
       );
     }
     if (!_initialized) {
