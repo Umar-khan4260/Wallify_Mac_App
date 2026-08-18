@@ -44,7 +44,7 @@ class NotificationService {
       tz.initializeTimeZones();
 
       await _plugin.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           macOS: DarwinInitializationSettings(
             requestAlertPermission: true,
             requestBadgePermission: true,
@@ -77,7 +77,12 @@ class NotificationService {
   Future<void> show(String title, String body) async {
     if (!_canNotify()) return;
     try {
-      await _plugin.show(_nextId++, title, body, _details);
+      await _plugin.show(
+        id: _nextId++,
+        title: title,
+        body: body,
+        notificationDetails: _details,
+      );
     } catch (e) {
       debugPrint('NotificationService.show failed: $e');
     }
@@ -94,13 +99,11 @@ class NotificationService {
     if (!_canNotify()) return;
     try {
       await _plugin.zonedSchedule(
-        id ?? _nextId++,
-        title,
-        body,
-        _tzFromLocal(when),
-        _details,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+        id: id ?? _nextId++,
+        title: title,
+        body: body,
+        scheduledDate: _tzFromLocal(when),
+        notificationDetails: _details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       );
     } catch (e) {
@@ -113,7 +116,7 @@ class NotificationService {
   Future<void> cancel(int id) async {
     if (!_initialized) return;
     try {
-      await _plugin.cancel(id);
+      await _plugin.cancel(id: id);
     } catch (e) {
       debugPrint('NotificationService.cancel failed: $e');
     }
