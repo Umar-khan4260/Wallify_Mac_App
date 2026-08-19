@@ -113,7 +113,7 @@ class PremiumHelper {
                               style: TextStyle(fontSize: 14),
                             ),
                             Text(
-                              '• Ad-free experience',
+                              '• 4K Live Wallpapers',
                               style: TextStyle(fontSize: 14),
                             ),
                             Text(

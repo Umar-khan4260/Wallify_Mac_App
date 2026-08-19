@@ -380,8 +380,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       ),
       (
         Icons.block_rounded,
-        'Ad-free experience',
-        'Enjoy a clean, distraction-free browsing experience.',
+        '4K Live Wallpapers',
+        'Enjoy stunning 4K live wallpapers.',
       ),
       (
         Icons.high_quality_rounded,
@@ -728,8 +728,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         GestureDetector(
           onTap: () => launchUrl(
             Uri.parse(
-              'https://docs.google.com/document/d/'
-              '1yxeTV3ZrCBtpg5RLjobg-Cdtbz3xr2lbEykKXdtMtzE/edit?usp=sharing',
+              'https://docs.google.com/document/d/1wXteNXc2pSdutH7YRAyS9Gtg0dr5LfjQI3oONcCBvck/edit?usp=sharing',
             ),
           ),
           child: Text('Terms & Conditions', style: linkStyle),
@@ -748,7 +747,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         ),
         GestureDetector(
           onTap: () => launchUrl(Uri.parse(
-              'https://docs.google.com/document/d/1wXteNXc2pSdutH7YRAyS9Gtg0dr5LfjQI3oONcCBvck/edit?usp=sharing')),
+              'https://sites.google.com/view/qasim-app-studio?usp=sharing')),
           child: Text('Privacy Policy', style: linkStyle),
         ),
       ],
