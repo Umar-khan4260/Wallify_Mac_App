@@ -7,6 +7,7 @@ import 'package:video_player/video_player.dart';
 import '../../data/download_service.dart';
 import '../../data/favorites_service.dart';
 import '../../data/wallpaper_service.dart';
+import '../../data/wallpaper_repository.dart';
 import '../../models/wallpaper.dart';
 import '../../utils/premium_helper.dart';
 
@@ -51,6 +52,16 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
         : [widget.wallpaper];
     _index = widget.initialIndex.clamp(0, _wallpapers.length - 1);
     _pageController = PageController(initialPage: _index);
+    _incrementViewCountLocally();
+    WallpaperRepository().updateView(_current.id).catchError((_) {});
+  }
+
+  void _incrementViewCountLocally() {
+    if (_wallpapers.isEmpty) return;
+    final current = _wallpapers[_index];
+    setState(() {
+      current.views++;
+    });
   }
 
   @override
@@ -78,6 +89,8 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
       _isSettingWallpaper = false;
       _currentPageZoomed = false;
     });
+    _incrementViewCountLocally();
+    WallpaperRepository().updateView(_current.id).catchError((_) {});
   }
 
   void _onZoomChanged(bool zoomed) {
@@ -158,9 +171,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
   void _handleShare() {
     if (!_hasAccessOrShowPaywall()) return;
     final shareUrl = _current.isVideo ? _current.mediaUrl : _current.imageUrl;
-    Share.share(
-      'Check out this awesome wallpaper from Wallify!\n$shareUrl',
-    );
+    Share.share('Check out this awesome wallpaper from Wallify!\n$shareUrl');
   }
 
   void _showInfoDialog() {
@@ -251,7 +262,7 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                     ? _LoopingVideoPlayer(url: wallpaper.mediaUrl)
                     : Image.network(
                         wallpaper.imageUrl,
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                         loadingBuilder: (context, child, progress) {
                           if (progress == null) return child;
                           return const Center(
@@ -365,6 +376,11 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                                 if (!isDone && !isInProgress) {
                                   if (!_hasAccessOrShowPaywall()) return;
                                   _dlService.downloadWallpaper(_current);
+
+                                  // Optimistically update download count
+                                  setState(() {
+                                    _current.downloads++;
+                                  });
                                 }
                               },
                             );
@@ -596,10 +612,15 @@ class _LoopingVideoPlayerState extends State<_LoopingVideoPlayer> {
         child: CircularProgressIndicator(color: Colors.white),
       );
     }
-    return Center(
-      child: AspectRatio(
-        aspectRatio: _controller.value.aspectRatio,
-        child: VideoPlayer(_controller),
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        clipBehavior: Clip.hardEdge,
+        child: SizedBox(
+          width: _controller.value.size.width,
+          height: _controller.value.size.height,
+          child: VideoPlayer(_controller),
+        ),
       ),
     );
   }

@@ -25,10 +25,10 @@ class Wallpaper {
   final String size;
 
   /// Number of times this wallpaper has been viewed (`views`).
-  final int views;
+  int views;
 
   /// Number of times this wallpaper has been downloaded (`downloads`).
-  final int downloads;
+  int downloads;
 
   /// True when this wallpaper belongs to the paid category.
   ///
@@ -53,7 +53,7 @@ class Wallpaper {
   /// The raw thumbnail filename (for video wallpapers).
   String get rawThumb => _rawThumb;
 
-  const Wallpaper({
+  Wallpaper({
     required this.id,
     required this.title,
     required this.category,
@@ -67,6 +67,34 @@ class Wallpaper {
     this.downloads = 0,
   }) : _rawImage = imageUrl,
        _rawThumb = thumbUrl;
+
+  Wallpaper copyWith({
+    String? id,
+    String? title,
+    String? category,
+    String? resolution,
+    String? imageUrl,
+    String? thumbUrl,
+    bool? isVideo,
+    int? categoryId,
+    String? size,
+    int? views,
+    int? downloads,
+  }) {
+    return Wallpaper(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      category: category ?? this.category,
+      resolution: resolution ?? this.resolution,
+      imageUrl: imageUrl ?? this._rawImage,
+      thumbUrl: thumbUrl ?? this._rawThumb,
+      isVideo: isVideo ?? this.isVideo,
+      categoryId: categoryId ?? this.categoryId,
+      size: size ?? this.size,
+      views: views ?? this.views,
+      downloads: downloads ?? this.downloads,
+    );
+  }
 
   factory Wallpaper.fromJson(Map<String, dynamic> json) {
     final rawImage = (json['image_upload'] as String? ?? '');

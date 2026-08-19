@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wallify/data/wallpaper_service.dart';
 import 'package:wallify/models/wallpaper.dart';
 
-const _wallpaper = Wallpaper(
+final _wallpaper = Wallpaper(
   id: '42',
   title: 'Aurora',
   category: 'Nature',
@@ -19,7 +19,7 @@ const _wallpaper = Wallpaper(
   imageUrl: 'aurora.jpg',
 );
 
-const _videoWallpaper = Wallpaper(
+final _videoWallpaper = Wallpaper(
   id: '7',
   title: 'Waves',
   category: 'Live',
@@ -66,8 +66,9 @@ void main() {
         );
         return;
       }
-      final result = await WallpaperService.instance
-          .setWallpaper(_videoWallpaper);
+      final result = await WallpaperService.instance.setWallpaper(
+        _videoWallpaper,
+      );
       expect(result.success, isFalse);
       expect(result.message, contains('macOS'));
     });

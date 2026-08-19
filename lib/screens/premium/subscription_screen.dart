@@ -453,7 +453,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         badge: null,
         price: provider.getLocalizedPrice('weekly'),
         period: '/ week',
-        description: 'All wallpapers, ad-free.',
+        description: 'All wallpapers.',
         saveBadge: null,
       ),
       _PlanData(
@@ -462,7 +462,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         badge: null,
         price: provider.getLocalizedPrice('monthly'),
         period: '/ month',
-        description: 'All wallpapers, ad-free, 4K downloads.',
+        description: 'All wallpapers, 4K downloads.',
         saveBadge: monthlySave,
       ),
       _PlanData(
@@ -471,7 +471,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         badge: 'Best Value',
         price: provider.getLocalizedPrice('yearly'),
         period: '/ year',
-        description: 'All wallpapers, ad-free, 4K downloads.',
+        description: 'All wallpapers 4K downloads.',
         saveBadge: savingsAmount,
       ),
     ];
