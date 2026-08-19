@@ -187,6 +187,9 @@ class _WallpaperPreviewScreenState extends State<WallpaperPreviewScreen> {
                 'Type',
                 wallpaper.isVideo ? 'Live Wallpaper' : 'Image',
               ),
+              _buildInfoRow('Size', wallpaper.size),
+              _buildInfoRow('Views', '${wallpaper.views}'),
+              _buildInfoRow('Downloads', '${wallpaper.downloads}'),
             ],
           ),
           actions: [

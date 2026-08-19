@@ -21,6 +21,15 @@ class Wallpaper {
   /// `category_name`.
   final int? categoryId;
 
+  /// Human-readable file size from the API response (`size`), e.g. "12.88 KB".
+  final String size;
+
+  /// Number of times this wallpaper has been viewed (`views`).
+  final int views;
+
+  /// Number of times this wallpaper has been downloaded (`downloads`).
+  final int downloads;
+
   /// True when this wallpaper belongs to the paid category.
   ///
   /// FRAGILITY WARNING: matching is by category NAME (case-insensitive) as a
@@ -53,6 +62,9 @@ class Wallpaper {
     String thumbUrl = '',
     this.isVideo = false,
     this.categoryId,
+    this.size = '',
+    this.views = 0,
+    this.downloads = 0,
   }) : _rawImage = imageUrl,
        _rawThumb = thumbUrl;
 
@@ -72,7 +84,17 @@ class Wallpaper {
       thumbUrl: rawThumb,
       isVideo: isVideo,
       categoryId: _parseCategoryId(json['category_id']),
+      size: json['size'] as String? ?? '',
+      views: _parseInt(json['views']),
+      downloads: _parseInt(json['downloads']),
     );
+  }
+
+  /// Numeric API fields may arrive as int or numeric string — normalize them.
+  static int _parseInt(Object? raw) {
+    if (raw is int) return raw;
+    if (raw is String) return int.tryParse(raw) ?? 0;
+    return 0;
   }
 
   /// `category_id` may arrive as an int or as a numeric string — normalize it.

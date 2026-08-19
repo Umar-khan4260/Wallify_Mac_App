@@ -286,57 +286,57 @@ class _WallpaperCardState extends State<WallpaperCard> {
                   child: Row(
                     children: [
                       // Download button
-                      ValueListenableBuilder<Map<String, double>>(
-                        valueListenable: _dlService.progressListenable,
-                        builder: (context, progressMap, _) {
-                          return ValueListenableBuilder<List<Wallpaper>>(
-                            valueListenable: _dlService.listenable,
-                            builder: (context, _, __) {
-                              final isDone = _dlService.isDownloaded(
-                                widget.wallpaper.id,
-                              );
-                              final isInProgress = _dlService.isDownloading(
-                                widget.wallpaper.id,
-                              );
-                              return GestureDetector(
-                                onTap: () {
-                                  if (!isDone && !isInProgress) {
-                                    if (!_hasAccessOrShowPaywall()) return;
-                                    _dlService.downloadWallpaper(
-                                      widget.wallpaper,
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.45),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: isInProgress
-                                      ? const SizedBox(
-                                          width: 16,
-                                          height: 16,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : Icon(
-                                          isDone
-                                              ? Icons.check
-                                              : Icons.download_rounded,
-                                          size: 16,
-                                          color: isDone
-                                              ? Colors.greenAccent
-                                              : Colors.white,
-                                        ),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+                      // ValueListenableBuilder<Map<String, double>>(
+                      //   valueListenable: _dlService.progressListenable,
+                      //   builder: (context, progressMap, _) {
+                      //     return ValueListenableBuilder<List<Wallpaper>>(
+                      //       valueListenable: _dlService.listenable,
+                      //       builder: (context, _, __) {
+                      //         final isDone = _dlService.isDownloaded(
+                      //           widget.wallpaper.id,
+                      //         );
+                      //         final isInProgress = _dlService.isDownloading(
+                      //           widget.wallpaper.id,
+                      //         );
+                      //         return GestureDetector(
+                      //           onTap: () {
+                      //             if (!isDone && !isInProgress) {
+                      //               if (!_hasAccessOrShowPaywall()) return;
+                      //               _dlService.downloadWallpaper(
+                      //                 widget.wallpaper,
+                      //               );
+                      //             }
+                      //           },
+                      //           child: Container(
+                      //             padding: const EdgeInsets.all(6),
+                      //             decoration: BoxDecoration(
+                      //               color: Colors.black.withValues(alpha: 0.45),
+                      //               shape: BoxShape.circle,
+                      //             ),
+                      //             child: isInProgress
+                      //                 ? const SizedBox(
+                      //                     width: 16,
+                      //                     height: 16,
+                      //                     child: CircularProgressIndicator(
+                      //                       strokeWidth: 2,
+                      //                       color: Colors.white,
+                      //                     ),
+                      //                   )
+                      //                 : Icon(
+                      //                     isDone
+                      //                         ? Icons.check
+                      //                         : Icons.download_rounded,
+                      //                     size: 16,
+                      //                     color: isDone
+                      //                         ? Colors.greenAccent
+                      //                         : Colors.white,
+                      //                   ),
+                      //           ),
+                      //         );
+                      //       },
+                      //     );
+                      //   },
+                      // ),
                       const SizedBox(width: AppSpacing.stackSm),
                       // Favorite button
                       ValueListenableBuilder<List<Wallpaper>>(
