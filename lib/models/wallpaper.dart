@@ -33,8 +33,9 @@ class Wallpaper {
     if (categoryId != null && ApiConfig.premiumCategoryId != 0) {
       return categoryId == ApiConfig.premiumCategoryId;
     }
-    return category.trim().toLowerCase() ==
-        ApiConfig.premiumCategoryName.trim().toLowerCase();
+    final premiumName = ApiConfig.premiumCategoryName.trim().toLowerCase();
+    return category.trim().toLowerCase() == premiumName ||
+        title.trim().toLowerCase().contains(premiumName);
   }
 
   /// The raw filename stored by FavoritesService.
