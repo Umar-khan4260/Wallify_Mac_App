@@ -360,7 +360,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Text(
-        'Get unlimited wallpapers, 4K downloads and an ad-free experience.',
+        'Get unlimited wallpapers, 4K downloads and an 4K Live Wallpapers.',
         textAlign: TextAlign.center,
         style: TextStyle(
           color: colorScheme.outline,
