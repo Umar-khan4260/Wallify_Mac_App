@@ -747,7 +747,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           child: Text('·', style: dotStyle),
         ),
         GestureDetector(
-          onTap: () => launchUrl(Uri.parse('https://example.com/privacy')),
+          onTap: () => launchUrl(Uri.parse(
+              'https://docs.google.com/document/d/1wXteNXc2pSdutH7YRAyS9Gtg0dr5LfjQI3oONcCBvck/edit?usp=sharing')),
           child: Text('Privacy Policy', style: linkStyle),
         ),
       ],
