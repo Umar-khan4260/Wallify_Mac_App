@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Provider/SubscriptionProvider.dart';
 import '../models/wallpaper.dart';
+import 'wallpaper_repository.dart';
 
 // Path-provider & dart:io are only available on native (non-web) platforms.
 // We use a conditional import stub so the file compiles on web too.
@@ -67,6 +68,7 @@ class DownloadService {
         await Future.delayed(const Duration(milliseconds: 800));
         await _add(wallpaper);
         _reload();
+        WallpaperRepository().updateDownload(wallpaper.id).catchError((_) {});
       } else {
         // Download on native (Android, iOS, Windows, macOS, Linux).
         final response = await http.get(Uri.parse(wallpaper.mediaUrl));
@@ -78,6 +80,9 @@ class DownloadService {
           if (saved) {
             await _add(wallpaper);
             _reload();
+            WallpaperRepository()
+                .updateDownload(wallpaper.id)
+                .catchError((_) {});
           }
         } else {
           debugPrint('Failed to download: HTTP ${response.statusCode}');

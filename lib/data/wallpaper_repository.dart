@@ -35,4 +35,24 @@ class WallpaperRepository {
         .map((item) => Wallpaper.fromJson(item as Map<String, dynamic>))
         .toList();
   }
+
+  Future<void> updateView(String imageId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}api.php?update_view');
+    final response = await http.post(uri, body: {'image_id': imageId});
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update view (HTTP ${response.statusCode})');
+    }
+  }
+
+  Future<void> updateDownload(String imageId) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}api.php?update_download');
+    final response = await http.post(uri, body: {'image_id': imageId});
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to update download (HTTP ${response.statusCode})',
+      );
+    }
+  }
 }
